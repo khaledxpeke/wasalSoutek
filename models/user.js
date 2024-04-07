@@ -15,6 +15,9 @@ const UserSchema = new Mongoose.Schema({
   phone: {
     type: String,
   },
+  token: {
+    type: String, 
+  },
   password: {
     type: String,
   },

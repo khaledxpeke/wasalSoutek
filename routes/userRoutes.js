@@ -13,7 +13,7 @@ const  {roleAuth}  = require("../middleware/auth");
 
 router.post("/register", register);
 router.post("/login", login);
-router.get("/",  getUsers);
+router.get("/", roleAuth(["admin"]), getUsers);
 router.get("/client", roleAuth(["admin"]), getClients);
 router.get("/:userId", roleAuth(["admin","client"]), getUserById);
 router.put("/:userId", roleAuth(["admin","client"]), updateUser);
@@ -22,8 +22,10 @@ router.get('/auth/facebook', passport.authenticate('facebook'));
 router.get('/auth/facebook/callback',
   passport.authenticate('facebook', { failureRedirect: '/login' }),
   function(req, res) {
+    console.log("request ",req)
+    const token = req.user.token;
     // res.redirect('/');
-    res.json({ message: 'Authentication successful' });
+    res.json({ token });
   }
 );
 
