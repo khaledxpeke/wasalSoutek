@@ -21,7 +21,7 @@ passport.use(
         if (!user) {
           user = await User.create({
             // email: profile.emails[0].value,
-            email: "",
+            // email: "",
             role: "client",
             displayName: profile.displayName,
             facebookId: profile.id,
