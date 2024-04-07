@@ -14,7 +14,7 @@ async function(accessToken, refreshToken, profile, done) {
   try {
     // Check if the user already exists in the database
     let user = await User.findOne({ facebookId: profile.id });
-
+    console.log(user)
     // If the user doesn't exist, create a new user
     if (!user) {
       user = await User.create({
