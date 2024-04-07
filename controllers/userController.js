@@ -9,7 +9,7 @@ app.use(express.json());
 
 
 exports.register = async (req, res) => {
-  const { email, firstName, lastName, phone } = req.body;
+  const { email, displayName, phone } = req.body;
   try {
     const user = await User.findOne({ email });
     if (user) {
@@ -20,8 +20,7 @@ exports.register = async (req, res) => {
       await User.create({
         email,
         role: "client",
-        firstName,
-        lastName,
+        displayName,
         phone,
         isApproved: false,
         password: hash,
