@@ -15,6 +15,7 @@ passport.use(
       profileFields: ["id", "displayName", "emails"],
     },
     async function (accessToken, refreshToken, profile, done) {
+        console.log(profile);
       try {
         let user = await User.findOne({ facebookId: profile.id });
         if (!user) {
