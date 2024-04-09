@@ -23,7 +23,7 @@ router.get('/auth/facebook/callback',
   passport.authenticate('facebook', { failureRedirect: '/login' }),
   function(req, res) {
     const token = req.user.token;
-    // res.redirect('/');
+    // res.redirect('/auth/facebook/success');
     res.json({ token });
   }
 );
