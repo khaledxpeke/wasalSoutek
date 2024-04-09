@@ -11,6 +11,15 @@ const ReclamationSchema = new Mongoose.Schema({
   images: [{
     type: String,
   }],
+  review: {
+    type: String,
+    enum: ["bad","good"],
+    required: true,
+  },
+  shown: {
+    type: Boolean,
+    default: true,
+  },
   user: {
     type: Mongoose.Schema.Types.ObjectId,
     ref: "User",
