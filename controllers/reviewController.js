@@ -21,7 +21,7 @@ exports.addReview = async (req, res, next) => {
         error: "Please upload an image",
       });
     }
-    const { name, link, phone, review, message } = req.body;
+    const { name, link, review, message } = req.body;
     const images = req.files.map((file) => file.filename);
     const userRole = req.user.user.role;
     let show = false;
@@ -37,7 +37,6 @@ exports.addReview = async (req, res, next) => {
       const reviews = await Review.create({
         name,
         link: link || "",
-        phone,
         show,
         review,
         message,

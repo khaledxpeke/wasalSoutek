@@ -7,10 +7,6 @@ const ReviewSchema = new Mongoose.Schema({
   link : {
     type: String,
   },
-  phone: {
-    type: String,
-    required: true,
-  },
   images: [{
     type: String,
     required: true,
