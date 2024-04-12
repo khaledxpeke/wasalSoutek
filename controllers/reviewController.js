@@ -82,17 +82,39 @@ exports.approveReview = async (req, res) => {
   }
 };
 
-exports.getReviews = async (req, res) => {
+exports.getBadReviews = async (req, res) => {
   const userRole = req.user.user.role;
   try {
     if (userRole == "client") {
       const reviews = await Review.find({
         user: req.user.user._id,
         approved: true,
+        review: false
       });
       res.status(200).json( reviews );
     } else {
-      const reviews = await Review.find({ approved: true });
+      const reviews = await Review.find({ approved: true , review: false});
+      res.status(200).json(reviews);
+    }
+  } catch (error) {
+    res
+      .status(400)
+      .json({ message: "An error occurred", error: error.message });
+  }
+};
+
+exports.getGoodReviews = async (req, res) => {
+  const userRole = req.user.user.role;
+  try {
+    if (userRole == "client") {
+      const reviews = await Review.find({
+        user: req.user.user._id,
+        approved: true,
+        review: true
+      });
+      res.status(200).json( reviews );
+    } else {
+      const reviews = await Review.find({ approved: true , review: true});
       res.status(200).json(reviews);
     }
   } catch (error) {

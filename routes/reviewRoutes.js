@@ -1,7 +1,8 @@
 const router = require("express").Router();
 const {
 addReview,
-getReviews,
+getBadReviews,
+getGoodReviews,
 getNonApprovedReviews,
 getReviewById,
 deleteReview,
@@ -10,7 +11,8 @@ approveReview
 const  {roleAuth}  = require("../middleware/auth");
 
 router.post("/", roleAuth(["admin","client"]),addReview);
-router.get("/", roleAuth(["admin","client"]), getReviews);
+router.get("/bad", roleAuth(["admin","client"]), getBadReviews);
+router.get("/good", roleAuth(["admin","client"]), getGoodReviews);
 router.get("/:reviewId", roleAuth(["admin","client"]), getReviewById);
 router.get("/list", roleAuth(["admin"]), getNonApprovedReviews);
 router.put("/approve/:reviewId", roleAuth(["admin"]), approveReview);
