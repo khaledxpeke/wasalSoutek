@@ -33,7 +33,8 @@ server = app.listen(3300, function () {
 });
 
 app.use("/api/user", require("./routes/userRoutes"));
-app.use("/api/reclamation", require("./routes/reclamationRoutes"));
+app.use("/api/review", require("./routes/reviewRoutes"));
+app.use("/api/comment", require("./routes/commentRoutes"));
 app.use("/api/uploads", express.static("uploads"));
 
 app.get("/adminRoute", roleAuth("admin"), (req, res) => {

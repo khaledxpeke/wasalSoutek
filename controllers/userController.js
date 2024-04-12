@@ -9,20 +9,19 @@ app.use(express.json());
 
 
 exports.register = async (req, res) => {
-  const { email, displayName, phone } = req.body;
+  const { email, displayName, phone,password } = req.body;
   try {
     const user = await User.findOne({ email });
     if (user) {
       return res.status(400).json({ message: "L'utilisateur existe déjà" });
     }
 
-    bcrypt.hash(phone, 10).then(async (hash) => {
+    bcrypt.hash(password, 10).then(async (hash) => {
       await User.create({
         email,
         role: "client",
         displayName,
         phone,
-        isApproved: false,
         password: hash,
       })
         .then((user) => {
