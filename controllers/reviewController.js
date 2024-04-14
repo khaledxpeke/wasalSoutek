@@ -86,7 +86,6 @@ exports.getBadReviews = async (req, res) => {
   try {
     if (userRole == "client") {
       const reviews = await Review.find({
-        user: req.user.user._id,
         approved: true,
         review: false,
       });
