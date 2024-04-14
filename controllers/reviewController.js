@@ -55,7 +55,9 @@ exports.addReview = async (req, res, next) => {
 
 exports.getNonApprovedReviews = async (req, res) => {
   try {
-    const reviews = await Review.find({ approved: false });
+    const reviews = await Review.find({ approved: false })
+      .populate("user", "displayName image")
+      .sort({ createdAt: -1 });
     res.status(200).json(reviews);
   } catch (error) {
     res
@@ -83,7 +85,9 @@ exports.approveReview = async (req, res) => {
 
 exports.getBadReviews = async (req, res) => {
   try {
-    const reviews = await Review.find({ approved: true, review: false }).populate("user", "displayName").sort({ createdAt: -1 });
+    const reviews = await Review.find({ approved: true, review: false })
+      .populate("user", "displayName image")
+      .sort({ createdAt: -1 });
     res.status(200).json(reviews);
   } catch (error) {
     res
@@ -94,7 +98,9 @@ exports.getBadReviews = async (req, res) => {
 
 exports.getGoodReviews = async (req, res) => {
   try {
-    const reviews = await Review.find({ approved: true, review: true }).populate("user", "displayName").sort({ createdAt: -1 });
+    const reviews = await Review.find({ approved: true, review: true })
+      .populate("user", "displayName image")
+      .sort({ createdAt: -1 });
     res.status(200).json(reviews);
   } catch (error) {
     res
@@ -108,7 +114,7 @@ exports.getReviewById = async (req, res) => {
   try {
     const review = await Review.findById(reviewId).populate(
       "user",
-      "displayName"
+      "displayName image"
     );
     res.status(200).json(review);
   } catch (error) {
