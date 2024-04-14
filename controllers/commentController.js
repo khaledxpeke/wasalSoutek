@@ -5,13 +5,12 @@ require("dotenv").config();
 app.use(express.json());
 
 exports.addComment = async (req, res) => {
-  const { message, time } = req.body;
+  const { message } = req.body;
   const { reviewId } = req.params;
   let show = false;
   try {
     const comments = await Comment.create({
       message,
-      time,
       show,
       user: req.user.user._id,
       review: reviewId,

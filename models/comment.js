@@ -19,10 +19,6 @@ const commentSchema = new mongoose.Schema({
     type: Boolean,
     default: true,
   },
-  time: {
-    type: String,
-    required: true
-  },
   createdAt: {
     type: Date,
     default: Date.now
