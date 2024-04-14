@@ -82,18 +82,9 @@ exports.approveReview = async (req, res) => {
 };
 
 exports.getBadReviews = async (req, res) => {
-  const userRole = req.user.user.role;
   try {
-    if (userRole == "client") {
-      const reviews = await Review.find({
-        approved: true,
-        review: false,
-      });
-      res.status(200).json(reviews);
-    } else {
-      const reviews = await Review.find({ approved: true, review: false });
-      res.status(200).json(reviews);
-    }
+    const reviews = await Review.find({ approved: true, review: false });
+    res.status(200).json(reviews);
   } catch (error) {
     res
       .status(400)
