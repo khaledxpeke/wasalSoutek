@@ -88,11 +88,11 @@ exports.getBadReviews = async (req, res) => {
       const reviews = await Review.find({
         user: req.user.user._id,
         approved: true,
-        review: false
+        review: false,
       });
-      res.status(200).json( reviews );
+      res.status(200).json(reviews);
     } else {
-      const reviews = await Review.find({ approved: true , review: false});
+      const reviews = await Review.find({ approved: true, review: false });
       res.status(200).json(reviews);
     }
   } catch (error) {
@@ -103,19 +103,9 @@ exports.getBadReviews = async (req, res) => {
 };
 
 exports.getGoodReviews = async (req, res) => {
-  const userRole = req.user.user.role;
   try {
-    if (userRole == "client") {
-      const reviews = await Review.find({
-        user: req.user.user._id,
-        approved: true,
-        review: true
-      });
-      res.status(200).json( reviews );
-    } else {
-      const reviews = await Review.find({ approved: true , review: true});
-      res.status(200).json(reviews);
-    }
+    const reviews = await Review.find({ approved: true, review: true });
+    res.status(200).json(reviews);
   } catch (error) {
     res
       .status(400)
@@ -148,7 +138,7 @@ exports.deleteReview = async (req, res) => {
     }
     if (review.images) {
       review.images.forEach((image) => {
-        const imagePath = path.join(__dirname, '..', 'uploads', image);
+        const imagePath = path.join(__dirname, "..", "uploads", image);
         if (fs.existsSync(imagePath)) {
           fs.unlinkSync(imagePath);
         }
