@@ -15,6 +15,10 @@ const commentSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  show: {
+    type: Boolean,
+    default: true,
+  },
   time: {
     type: String,
     required: true

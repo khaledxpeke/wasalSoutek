@@ -24,7 +24,6 @@ exports.addReview = async (req, res, next) => {
     const { name, link, review, message } = req.body;
     const images = req.files.map((file) => file.filename);
     const userRole = req.user.user.role;
-    let show = false;
     let approved = false;
 
     if (review === "false" && userRole == "client") {
@@ -37,7 +36,6 @@ exports.addReview = async (req, res, next) => {
       const reviews = await Review.create({
         name,
         link: link || "",
-        show,
         review,
         message,
         approved,

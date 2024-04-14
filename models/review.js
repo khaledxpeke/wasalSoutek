@@ -15,10 +15,6 @@ const ReviewSchema = new Mongoose.Schema({
     type: Boolean,
     required: true,
   },
-  show: {
-    type: Boolean,
-    default: true,
-  },
   user: {
     type: Mongoose.Schema.Types.ObjectId,
     ref: "User",
