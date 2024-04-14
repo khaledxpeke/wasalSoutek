@@ -24,6 +24,10 @@ const UserSchema = new Mongoose.Schema({
   facebookId: { 
     type: String,
   },
+  image:{
+    type: String,
+    default: "user.png",
+  },
   createdAt: {
     type: Date,
     default: Date.now,

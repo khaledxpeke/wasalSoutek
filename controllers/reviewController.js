@@ -13,7 +13,7 @@ const path = require("path");
 exports.addReview = async (req, res, next) => {
   upload(req, res, async (err) => {
     if (err) {
-      return res.status(400).json({ message: "Error uploading image" });
+      return res.status(400).json({ message: err.message });
     }
     if (!req.files) {
       return res.status(400).json({

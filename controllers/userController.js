@@ -9,7 +9,7 @@ app.use(express.json());
 
 
 exports.register = async (req, res) => {
-  const { email, displayName, phone,password } = req.body;
+  const { email, displayName, phone,password,image } = req.body;
   try {
     const user = await User.findOne({ email });
     if (user) {
