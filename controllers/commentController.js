@@ -26,7 +26,7 @@ exports.getComments = async (req, res) => {
   const { reviewId } = req.params;
   try {
     const comments = await Comment.find({ review: reviewId })
-      .populate("user", "displayName")
+      .populate("user", "displayName image")
       .sort({ createdAt: -1 });
     res.status(200).json(comments);
   } catch (error) {
