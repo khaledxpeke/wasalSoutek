@@ -42,7 +42,6 @@ exports.deleteComment = async (req, res) => {
   try {
     if (userRole == "client") {
       const comment = await Comment.findById(commentId);
-      console.log(comment.user.toString(), req.user.user._id.toString());
       if (comment.user.toString() !== req.user.user._id.toString()) {
         return res.status(403).json({ message: "Not authorized" });
       } else {
