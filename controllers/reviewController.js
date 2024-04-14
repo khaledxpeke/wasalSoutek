@@ -83,7 +83,7 @@ exports.approveReview = async (req, res) => {
 
 exports.getBadReviews = async (req, res) => {
   try {
-    const reviews = await Review.find({ approved: true, review: false }).populate("user", "displayName");
+    const reviews = await Review.find({ approved: true, review: false }).populate("user", "displayName").sort({ createdAt: -1 });
     res.status(200).json(reviews);
   } catch (error) {
     res
@@ -94,7 +94,7 @@ exports.getBadReviews = async (req, res) => {
 
 exports.getGoodReviews = async (req, res) => {
   try {
-    const reviews = await Review.find({ approved: true, review: true }).populate("user", "displayName");
+    const reviews = await Review.find({ approved: true, review: true }).populate("user", "displayName").sort({ createdAt: -1 });
     res.status(200).json(reviews);
   } catch (error) {
     res
