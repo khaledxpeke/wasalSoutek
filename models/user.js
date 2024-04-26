@@ -12,9 +12,6 @@ const UserSchema = new Mongoose.Schema({
   displayName: {
     type: String,
   },
-  phone: {
-    type: String,
-  },
   token: {
     type: String, 
   },

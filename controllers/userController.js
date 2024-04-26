@@ -20,7 +20,7 @@ exports.register = async (req, res) => {
         error: err.message,
       });
     }
-    const { email, displayName, phone, password } = req.body;
+    const { email, displayName, password } = req.body;
     const image = req.file ? req.file.path : defaultImage;
     try {
       const user = await User.findOne({ email });
@@ -33,7 +33,6 @@ exports.register = async (req, res) => {
           email,
           role: "client",
           displayName,
-          phone,
           password: hash,
           image,
         })
