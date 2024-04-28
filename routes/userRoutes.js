@@ -16,7 +16,7 @@ router.post("/login", login);
 router.get("/", roleAuth(["admin"]), getUsers);
 router.get("/client", roleAuth(["admin"]), getClients);
 router.get("/:userId", roleAuth(["admin","client"]), getUserById);
-router.put("/:userId", roleAuth(["admin","client"]), updateUser);
+router.put("/", roleAuth(["admin","client"]), updateUser);
 router.delete("/:userId", roleAuth(["admin"]), deleteUser);
 router.get('/auth/facebook', passport.authenticate('facebook'));
 router.get('/auth/facebook/callback',

@@ -156,24 +156,40 @@ exports.getUserById = async (req, res) => {
 };
 
 exports.updateUser = async (req, res) => {
-  const { userId } = req.params;
-
-  try {
-    let user = await User.findByIdAndUpdate(
-      userId,
-      { $set: { ...req.body } },
-      { new: true }
-    );
-    if (!user) {
-      return res.status(404).json({ message: "Aucune Client trouvé" });
+  upload.single("image")(req, res, async (err) => {
+    if (err) {
+      console.log(err);
+      return res.status(500).send("Server Error");
     }
-    res.status(200).json({ user, message: "Client modifié avec succées" });
-  } catch (err) {
-    console.log(err.message);
-    res.status(500).send("erreur du serveur");
-  }
-};
 
+    const userId = req.user.user._id;
+    const { email, displayName } = req.body;
+
+    try {
+      let user = await User.findById(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      user.email = email;
+      user.displayName = displayName;
+
+      if (req.file) {
+        console.log(user.image);
+        if (user.image !== "uploads\\user.png") {
+          fs.unlinkSync(user.image);
+        }
+
+        user.image = req.file.path;
+      }
+
+      await user.save();
+      res.json(user);
+    } catch (err) {
+      console.log(err.message);
+      res.status(500).send("Server Error");
+    }
+  });
+};
 exports.deleteUser = async (req, res) => {
   const { userId } = req.params;
   try {
