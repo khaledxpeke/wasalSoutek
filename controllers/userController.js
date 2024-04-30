@@ -163,18 +163,16 @@ exports.updateUser = async (req, res) => {
     }
 
     const userId = req.user.user._id;
-    const { email, displayName } = req.body;
+    const { displayName } = req.body;
 
     try {
       let user = await User.findById(userId);
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
-      user.email = email;
       user.displayName = displayName;
 
       if (req.file) {
-        console.log(user.image);
         if (user.image !== "uploads\\user.png") {
           fs.unlinkSync(user.image);
         }

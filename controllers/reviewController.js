@@ -26,7 +26,7 @@ exports.addReview = async (req, res, next) => {
     const userRole = req.user.user.role;
     let approved = false;
 
-    if (review === "false" && userRole == "client") {
+    if (userRole == "client") {
       approved = false;
     } else {
       approved = true;
