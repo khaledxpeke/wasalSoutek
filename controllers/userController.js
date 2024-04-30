@@ -181,7 +181,7 @@ exports.updateUser = async (req, res) => {
       }
 
       await user.save();
-      res.json(user);
+      res.status(200).json(user);
     } catch (err) {
       console.log(err.message);
       res.status(500).send("Server Error");
