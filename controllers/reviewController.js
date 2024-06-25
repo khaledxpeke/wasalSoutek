@@ -82,11 +82,22 @@ exports.approveReview = async (req, res) => {
 
 exports.getBadReviews = async (req, res) => {
   try {
+    const { page = 1, limit = 10 } = req.query;
+
     const reviews = await Review.find({ approved: true, review: false })
       .populate("user", "displayName image")
       .sort({ createdAt: -1 })
-      .limit(3);
-    res.status(200).json(reviews);
+      .skip((page - 1) * limit)
+      .limit(parseInt(limit));
+
+    const totalReviews = await Review.countDocuments({ approved: true, review: false });
+
+    res.status(200).json({
+      totalReviews,
+      currentPage: parseInt(page),
+      totalPages: Math.ceil(totalReviews / limit),
+      reviews
+    });
   } catch (error) {
     res
       .status(400)
@@ -96,12 +107,20 @@ exports.getBadReviews = async (req, res) => {
 
 exports.getGoodReviews = async (req, res) => {
   try {
+    const { page = 1, limit = 10 } = req.query;
     const reviews = await Review.find({ approved: true, review: true })
       .populate("user", "displayName image")
       .sort({ createdAt: -1 })
-      .limit(3);
-      console.log(reviews);
-    res.status(200).json(reviews);
+      .skip((page - 1) * limit)
+      .limit(parseInt(limit));
+      const totalReviews = await Review.countDocuments({ approved: true, review: true });
+
+      res.status(200).json({
+        totalReviews,
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(totalReviews / limit),
+        reviews
+      });
   } catch (error) {
     res
       .status(400)
