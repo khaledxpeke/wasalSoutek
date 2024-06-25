@@ -7,7 +7,7 @@ deleteComment
 const  {roleAuth}  = require("../middleware/auth");
 
 router.post("/:reviewId", roleAuth(["admin","client"]),addComment);
-router.get("/:reviewId", roleAuth(["admin","client"]), getComments);
+router.get("/:reviewId/:page", roleAuth(["admin","client"]), getComments);
 router.delete("/:commentId", roleAuth(["admin","client"]), deleteComment);
 
 
