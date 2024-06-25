@@ -108,7 +108,7 @@ exports.getBadReviews = async (req, res) => {
 exports.getGoodReviews = async (req, res) => {
   try {
     const { page } = req.params;
-    const { limit = 3 } = req.query;
+    const limit = 3 ;
     const reviews = await Review.find({ approved: true, review: true })
       .populate("user", "displayName image")
       .sort({ createdAt: -1 })
