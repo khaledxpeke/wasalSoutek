@@ -92,12 +92,9 @@ exports.getBadReviews = async (req, res) => {
 
     const totalReviews = await Review.countDocuments({ approved: true, review: false });
 
-    res.status(200).json({
-      totalReviews,
-      currentPage: parseInt(page),
-      totalPages: Math.ceil(totalReviews / limit),
+    res.status(200).json(
       reviews
-    });
+    );
   } catch (error) {
     res
       .status(400)
@@ -115,12 +112,9 @@ exports.getGoodReviews = async (req, res) => {
       .limit(parseInt(limit));
       const totalReviews = await Review.countDocuments({ approved: true, review: true });
 
-      res.status(200).json({
-        totalReviews,
-        currentPage: parseInt(page),
-        totalPages: Math.ceil(totalReviews / limit),
+      res.status(200).json(
         reviews
-      });
+      );
   } catch (error) {
     res
       .status(400)
