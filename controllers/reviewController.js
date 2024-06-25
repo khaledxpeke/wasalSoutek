@@ -54,8 +54,7 @@ exports.addReview = async (req, res, next) => {
 exports.getNonApprovedReviews = async (req, res) => {
   try {
     const reviews = await Review.find({ approved: false })
-      .populate("user", "displayName image")
-      .sort({ createdAt: -1 });
+      .populate("user", "displayName image");
     res.status(200).json(reviews);
   } catch (error) {
     res
@@ -101,6 +100,7 @@ exports.getGoodReviews = async (req, res) => {
       .populate("user", "displayName image")
       .sort({ createdAt: -1 })
       .limit(3);
+      console.log(reviews);
     res.status(200).json(reviews);
   } catch (error) {
     res
