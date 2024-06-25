@@ -108,7 +108,7 @@ exports.getGoodReviews = async (req, res) => {
     const reviews = await Review.find({ approved: true, review: true })
       .populate("user", "displayName image")
       .sort({ createdAt: -1 })
-      .skip((page) * limit)
+      .skip((page - 1) * limit)
       .limit(parseInt(limit));
       const totalReviews = await Review.countDocuments({ approved: true, review: true });
 
