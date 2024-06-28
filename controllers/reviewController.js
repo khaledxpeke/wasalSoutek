@@ -53,8 +53,12 @@ exports.addReview = async (req, res, next) => {
 
 exports.getNonApprovedReviews = async (req, res) => {
   try {
+    const { page } = req.params;
+    const limit = 3;
     const reviews = await Review.find({ approved: false })
-      .populate("user", "displayName image");
+      .populate("user", "displayName image")
+      .skip((page - 1) * limit)
+      .limit(parseInt(limit));
     res.status(200).json(reviews);
   } catch (error) {
     res
@@ -82,19 +86,15 @@ exports.approveReview = async (req, res) => {
 
 exports.getBadReviews = async (req, res) => {
   try {
-    const { page = 1, limit = 3 } = req.query;
-
+    const { page } = req.params;
+    const limit = 3;
     const reviews = await Review.find({ approved: true, review: false })
       .populate("user", "displayName image")
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(parseInt(limit));
 
-    const totalReviews = await Review.countDocuments({ approved: true, review: false });
-
-    res.status(200).json(
-      reviews
-    );
+    res.status(200).json(reviews);
   } catch (error) {
     res
       .status(400)
@@ -105,13 +105,12 @@ exports.getBadReviews = async (req, res) => {
 exports.getGoodReviews = async (req, res) => {
   try {
     const { page } = req.params;
-    const limit = 3 ;
+    const limit = 3;
     const reviews = await Review.find({ approved: true, review: true })
       .populate("user", "displayName image")
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(parseInt(limit));
-      const totalReviews = await Review.countDocuments({ approved: true, review: true });
 
       res.status(200).json(
         reviews
