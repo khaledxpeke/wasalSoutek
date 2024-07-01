@@ -9,13 +9,14 @@ exports.addComment = async (req, res) => {
   const { reviewId } = req.params;
   let show = false;
   try {
-    const comments = await Comment.create({
+    const comment = await Comment.create({
       message,
       show,
       user: req.user.user._id,
       review: reviewId,
     });
-    res.status(201).json({ comments, message: "Comment added successfully" });
+    const populatedComment = await Comment.findById(comment._id).populate('user');
+    res.status(201).json(populatedComment);
   } catch (error) {
     res
       .status(400)
