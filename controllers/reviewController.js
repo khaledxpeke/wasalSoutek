@@ -136,29 +136,37 @@ exports.getReviewById = async (req, res) => {
 };
 
 exports.getFiltredReviews = async (req, res) => {
-  const { page, filter } = req.params;
+  const { page, filter, search } = req.params;
   try {
     const limit = 10;
-    let reviews;
-    if (filter == "positive") {
-      reviews = await Review.find({ approved: true, review: true })
-        .populate("user", "displayName image")
-        .sort({ createdAt: -1 })
-        .skip((page - 1) * limit)
-        .limit(parseInt(limit));
-    } else if (filter == "negative") {
-      reviews = await Review.find({ approved: true, review: false })
-        .populate("user", "displayName image")
-        .sort({ createdAt: -1 })
-        .skip((page - 1) * limit)
-        .limit(parseInt(limit));
-    } else if (filter == "pending") {
-      reviews = await Review.find({ approved: false })
-        .populate("user", "displayName image")
-        .sort({ createdAt: -1 })
-        .skip((page - 1) * limit)
-        .limit(parseInt(limit));
+    let query = {};
+
+    // Construct the query based on the filter
+    if (filter === "positive") {
+      query = { approved: true, review: true };
+    } else if (filter === "negative") {
+      query = { approved: true, review: false };
+    } else if (filter === "pending") {
+      query = { approved: false };
     }
+
+    if (search) {
+      query.$or = [
+        { name: { $regex: new RegExp(search, "i") } },
+        { 'user.displayName': { $regex: new RegExp(search, "i") } }
+      ];
+    }
+    let reviews = await Review.find(query)
+      .populate("user", "displayName image")
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(parseInt(limit));
+
+    // if (search) {
+    //   const userRegex = new RegExp(search, "i");
+    //   reviews = reviews.filter(review => review.user && userRegex.test(review.user.displayName));
+    // }
+
     res.status(200).json(reviews);
   } catch (error) {
     res
