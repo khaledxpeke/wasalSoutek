@@ -54,11 +54,18 @@ exports.addReview = async (req, res, next) => {
 exports.getNonApprovedReviews = async (req, res) => {
   try {
     const { page } = req.params;
-    const limit = 3;
+    const limit = 10;
+
+    // Calculate skip based on page number
+    const skip = (page - 1) * limit;
+
+    // Fetch non-approved reviews with pagination
     const reviews = await Review.find({ approved: false })
       .populate("user", "displayName image")
-      .skip((page - 1) * limit)
-      .limit(parseInt(limit));
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .exec();
     res.status(200).json(reviews);
   } catch (error) {
     res
@@ -153,11 +160,15 @@ exports.getFiltredReviews = async (req, res) => {
     if (search) {
       query.$or = [
         { name: { $regex: new RegExp(search, "i") } },
-        { 'user.displayName': { $regex: new RegExp(search, "i") } }
+        { "user.displayName": { $regex: new RegExp(search, "i") } },
       ];
     }
     let reviews = await Review.find(query)
-      .populate("user", "displayName image")
+      .populate({
+        path: "user",
+        select: "displayName image",
+        match: { displayName: { $regex: new RegExp(search, "i") } },
+      })
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(parseInt(limit));
