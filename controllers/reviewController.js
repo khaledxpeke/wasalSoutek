@@ -146,43 +146,68 @@ exports.getFiltredReviews = async (req, res) => {
   const { page, filter, search } = req.params;
   try {
     const limit = 10;
-    let query = {};
+    let matchQuery = {};
 
     // Construct the query based on the filter
     if (filter === "positive") {
-      query = { approved: true, review: true };
+      matchQuery = { approved: true, review: true };
     } else if (filter === "negative") {
-      query = { approved: true, review: false };
+      matchQuery = { approved: true, review: false };
     } else if (filter === "pending") {
-      query = { approved: false };
+      matchQuery = { approved: false };
     }
+
+    const aggregationPipeline = [];
+
+
+    aggregationPipeline.push({ $match: matchQuery });
+
+
+    aggregationPipeline.push({
+      $lookup: {
+        from: 'users', 
+        localField: 'user',
+        foreignField: '_id',
+        as: 'user',
+      },
+    });
+
+    aggregationPipeline.push({ $unwind: '$user' });
 
     if (search) {
-      query.$or = [
-        { name: { $regex: new RegExp(search, "i") } },
-        { "user.displayName": { $regex: new RegExp(search, "i") } },
-      ];
+      aggregationPipeline.push({
+        $match: {
+          $or: [
+            { 'user.displayName': { $regex: new RegExp(search, 'i') } },
+            { name: { $regex: new RegExp(search, 'i') } },
+          ],
+        },
+      });
     }
-    let reviews = await Review.find(query)
-      .populate({
-        path: "user",
-        select: "displayName image",
-        match: { displayName: { $regex: new RegExp(search, "i") } },
-      })
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(parseInt(limit));
 
-    // if (search) {
-    //   const userRegex = new RegExp(search, "i");
-    //   reviews = reviews.filter(review => review.user && userRegex.test(review.user.displayName));
-    // }
+    aggregationPipeline.push({
+      $project: {
+        _id: 1,
+        name: 1,
+        link: 1,
+        images: 1,
+        review: 1,
+        message: 1,
+        approved: 1,
+        createdAt: 1,
+        user: { displayName: '$user.displayName', image: '$user.image' },
+      },
+    });
+
+    aggregationPipeline.push({ $sort: { createdAt: -1 } });
+    aggregationPipeline.push({ $skip: (page - 1) * limit });
+    aggregationPipeline.push({ $limit: limit });
+
+    const reviews = await Review.aggregate(aggregationPipeline);
 
     res.status(200).json(reviews);
   } catch (error) {
-    res
-      .status(400)
-      .json({ message: "An error occurred", error: error.message });
+    res.status(400).json({ message: 'An error occurred', error: error.message });
   }
 };
 
