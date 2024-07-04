@@ -112,9 +112,7 @@ exports.getGoodReviews = async (req, res) => {
       .skip((page - 1) * limit)
       .limit(parseInt(limit));
 
-      res.status(200).json(
-        reviews
-      );
+    res.status(200).json(reviews);
   } catch (error) {
     res
       .status(400)
@@ -130,6 +128,38 @@ exports.getReviewById = async (req, res) => {
       "displayName image"
     );
     res.status(200).json(review);
+  } catch (error) {
+    res
+      .status(400)
+      .json({ message: "An error occurred", error: error.message });
+  }
+};
+
+exports.getFiltredReviews = async (req, res) => {
+  const { page, filter } = req.params;
+  try {
+    const limit = 10;
+    let reviews;
+    if (filter == "positive") {
+      reviews = await Review.find({ approved: true, review: true })
+        .populate("user", "displayName image")
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(parseInt(limit));
+    } else if (filter == "negative") {
+      reviews = await Review.find({ approved: true, review: false })
+        .populate("user", "displayName image")
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(parseInt(limit));
+    } else if (filter == "pending") {
+      reviews = await Review.find({ approved: false })
+        .populate("user", "displayName image")
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(parseInt(limit));
+    }
+    res.status(200).json(reviews);
   } catch (error) {
     res
       .status(400)
