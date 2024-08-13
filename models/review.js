@@ -1,16 +1,18 @@
 const Mongoose = require("mongoose");
 const ReviewSchema = new Mongoose.Schema({
-  name : {
+  name: {
     type: String,
     required: true,
   },
-  link : {
+  link: {
     type: String,
   },
-  images: [{
-    type: String,
-    required: true,
-  }],
+  images: [
+    {
+      type: String,
+      required: true,
+    },
+  ],
   review: {
     type: Boolean,
     required: true,
@@ -20,7 +22,7 @@ const ReviewSchema = new Mongoose.Schema({
     ref: "User",
     required: true,
   },
-  message:{
+  message: {
     type: String,
     required: true,
   },
@@ -31,24 +33,22 @@ const ReviewSchema = new Mongoose.Schema({
   stars: {
     type: Number,
     default: 0,
-  },
-  ratings: [{
-    user: {
-      type: Mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-    },
-    stars: {
-      type: Number,
-      required: true,
-    },
-  }],
-  ratingPercentage:{
-    type: Number,
-    default: 0,
     min: 0,
-    max: 5
+    max: 5,
   },
+  ratings: [
+    {
+      user: {
+        type: Mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        required: true,
+      },
+      stars: {
+        type: Number,
+        required: true,
+      },
+    },
+  ],
   createdAt: {
     type: Date,
     default: Date.now,

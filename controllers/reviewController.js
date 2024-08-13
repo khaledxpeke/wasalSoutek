@@ -159,27 +159,25 @@ exports.getFiltredReviews = async (req, res) => {
 
     const aggregationPipeline = [];
 
-
     aggregationPipeline.push({ $match: matchQuery });
-
 
     aggregationPipeline.push({
       $lookup: {
-        from: 'users', 
-        localField: 'user',
-        foreignField: '_id',
-        as: 'user',
+        from: "users",
+        localField: "user",
+        foreignField: "_id",
+        as: "user",
       },
     });
 
-    aggregationPipeline.push({ $unwind: '$user' });
+    aggregationPipeline.push({ $unwind: "$user" });
 
     if (search) {
       aggregationPipeline.push({
         $match: {
           $or: [
-            { 'user.displayName': { $regex: new RegExp(search, 'i') } },
-            { name: { $regex: new RegExp(search, 'i') } },
+            { "user.displayName": { $regex: new RegExp(search, "i") } },
+            { name: { $regex: new RegExp(search, "i") } },
           ],
         },
       });
@@ -195,7 +193,7 @@ exports.getFiltredReviews = async (req, res) => {
         message: 1,
         approved: 1,
         createdAt: 1,
-        user: { displayName: '$user.displayName', image: '$user.image' },
+        user: { displayName: "$user.displayName", image: "$user.image" },
       },
     });
 
@@ -207,21 +205,92 @@ exports.getFiltredReviews = async (req, res) => {
 
     res.status(200).json(reviews);
   } catch (error) {
-    res.status(400).json({ message: 'An error occurred', error: error.message });
+    res
+      .status(400)
+      .json({ message: "An error occurred", error: error.message });
+  }
+};
+exports.getSuggestions = async (req, res) => {
+  const { filter, search } = req.params;
+  try {
+    const limit = 10;
+    let matchQuery = {};
+
+    // Construct the query based on the filter
+    if (filter === "positive") {
+      matchQuery = { approved: true, review: true };
+    } else if (filter === "negative") {
+      matchQuery = { approved: true, review: false };
+    } else if (filter === "pending") {
+      matchQuery = { approved: false };
+    }
+
+    const aggregationPipeline = [];
+
+    aggregationPipeline.push({ $match: matchQuery });
+
+    aggregationPipeline.push({
+      $lookup: {
+        from: "users",
+        localField: "user",
+        foreignField: "_id",
+        as: "user",
+      },
+    });
+
+    aggregationPipeline.push({ $unwind: "$user" });
+
+    if (search) {
+      aggregationPipeline.push({
+        $match: {
+          $or: [
+            { "user.displayName": { $regex: new RegExp(search, "i") } },
+            { name: { $regex: new RegExp(search, "i") } },
+          ],
+        },
+      });
+    }
+
+    aggregationPipeline.push({
+      $project: {
+        _id: 0,
+        name: {
+          $cond: {
+            if: { $ne: ["$user.displayName", null] },
+            then: "$user.displayName",
+            else: "$name",
+          },
+        },
+      },
+    });
+
+    aggregationPipeline.push({ $group: { _id: "$name" } });
+    aggregationPipeline.push({ $sort: { _id: 1 } });
+    aggregationPipeline.push({ $limit: limit });
+
+    const suggestions = await Review.aggregate(aggregationPipeline);
+
+    res.status(200).json(suggestions.map(s => s._id));
+  } catch (error) {
+    res
+      .status(400)
+      .json({ message: "An error occurred", error: error.message });
   }
 };
 exports.rateReview = async (req, res) => {
   try {
     const { reviewId } = req.params;
     const { stars } = req.body;
-    const userId = req.user.user._id; 
+    const userId = req.user.user._id;
 
     const review = await Review.findById(reviewId);
     if (!review) {
       return res.status(404).json({ message: "Review not found" });
     }
 
-    const existingRating = review.ratings.find(r => r.user.toString() === userId.toString());
+    const existingRating = review.ratings.find(
+      (r) => r.user.toString() === userId.toString()
+    );
 
     if (existingRating) {
       existingRating.stars = stars;
@@ -229,15 +298,19 @@ exports.rateReview = async (req, res) => {
       review.ratings.push({ user: userId, stars });
     }
 
-    const totalStars = review.ratings.reduce((acc, rate) => acc + rate.stars, 0);
+    const totalStars = review.ratings.reduce(
+      (acc, rate) => acc + rate.stars,
+      0
+    );
     review.stars = totalStars / review.ratings.length;
-    review.ratingPercentage = Math.round((review.stars / 5) * 100) / 100;
 
     await review.save();
 
     res.status(200).json(review);
   } catch (error) {
-    res.status(400).json({ message: "An error occurred", error: error.message });
+    res
+      .status(400)
+      .json({ message: "An error occurred", error: error.message });
   }
 };
 exports.deleteReview = async (req, res) => {
