@@ -28,6 +28,27 @@ const ReviewSchema = new Mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  stars: {
+    type: Number,
+    default: 0,
+  },
+  ratings: [{
+    user: {
+      type: Mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    stars: {
+      type: Number,
+      required: true,
+    },
+  }],
+  ratingPercentage:{
+    type: Number,
+    default: 0,
+    min: 0,
+    max: 5
+  },
   createdAt: {
     type: Date,
     default: Date.now,

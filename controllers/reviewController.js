@@ -210,7 +210,36 @@ exports.getFiltredReviews = async (req, res) => {
     res.status(400).json({ message: 'An error occurred', error: error.message });
   }
 };
+exports.rateReview = async (req, res) => {
+  try {
+    const { reviewId } = req.params;
+    const { stars } = req.body;
+    const userId = req.user.user._id; 
 
+    const review = await Review.findById(reviewId);
+    if (!review) {
+      return res.status(404).json({ message: "Review not found" });
+    }
+
+    const existingRating = review.ratings.find(r => r.user.toString() === userId.toString());
+
+    if (existingRating) {
+      existingRating.stars = stars;
+    } else {
+      review.ratings.push({ user: userId, stars });
+    }
+
+    const totalStars = review.ratings.reduce((acc, rate) => acc + rate.stars, 0);
+    review.stars = totalStars / review.ratings.length;
+    review.ratingPercentage = Math.round((review.stars / 5) * 100) / 100;
+
+    await review.save();
+
+    res.status(200).json(review);
+  } catch (error) {
+    res.status(400).json({ message: "An error occurred", error: error.message });
+  }
+};
 exports.deleteReview = async (req, res) => {
   const { reviewId } = req.params;
   const userRole = req.user.user.role;
