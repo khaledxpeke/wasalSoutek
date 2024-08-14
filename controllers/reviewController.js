@@ -212,6 +212,7 @@ exports.getFiltredReviews = async (req, res) => {
 };
 exports.getSuggestions = async (req, res) => {
   const { filter, search } = req.params;
+  console.log(search)
   try {
     const limit = 10;
     let matchQuery = {};
@@ -224,7 +225,7 @@ exports.getSuggestions = async (req, res) => {
     } else if (filter === "pending") {
       matchQuery = { approved: false };
     }
-
+    const searchRegex = new RegExp(search, "i");
     const aggregationPipeline = [];
 
     aggregationPipeline.push({ $match: matchQuery });
@@ -240,35 +241,44 @@ exports.getSuggestions = async (req, res) => {
 
     aggregationPipeline.push({ $unwind: "$user" });
 
-    if (search) {
-      aggregationPipeline.push({
-        $match: {
-          $or: [
-            { "user.displayName": { $regex: new RegExp(search, "i") } },
-            { name: { $regex: new RegExp(search, "i") } },
-          ],
-        },
-      });
-    }
-
     aggregationPipeline.push({
-      $project: {
-        _id: 0,
-        name: {
-          $cond: {
-            if: { $ne: ["$user.displayName", null] },
-            then: "$user.displayName",
-            else: "$name",
+      $facet: {
+        reviews: [
+          {
+            $match: { name: { $regex: searchRegex } },
           },
-        },
+          {
+            $project: { name: 1, _id: 0 },
+          },
+          {
+            $group: {
+              _id: "$name",
+            },
+          },
+          { $sort: { _id: 1 } },
+          { $limit: limit },
+        ],
+        users: [
+          {
+            $match: { "user.displayName": { $regex: searchRegex } },
+          },
+          {
+            $project: { name: "$user.displayName", _id: 0 },
+          },
+          {
+            $group: {
+              _id: "$name",
+            },
+          },
+          { $sort: { _id: 1 } },
+          { $limit: limit },
+        ],
       },
     });
 
-    aggregationPipeline.push({ $group: { _id: "$name" } });
-    aggregationPipeline.push({ $sort: { _id: 1 } });
-    aggregationPipeline.push({ $limit: limit });
-
-    const suggestions = await Review.aggregate(aggregationPipeline);
+    const results = await Review.aggregate(aggregationPipeline);
+    
+    const suggestions = [...results[0].reviews, ...results[0].users];
 
     res.status(200).json(suggestions.map(s => s._id));
   } catch (error) {
