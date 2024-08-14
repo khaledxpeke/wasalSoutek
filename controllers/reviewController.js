@@ -44,10 +44,13 @@ exports.addReview = async (req, res, next) => {
       });
       res.status(201).json({ reviews, message: "Review added successfully" });
     } catch (error) {
+      if (error.code === 11000) {
+        res.status(400).json({ message: "Review name must be unique." });
+      } else {
       res
         .status(400)
         .json({ message: "An error occurred", error: error.message });
-    }
+    }}
   });
 };
 
