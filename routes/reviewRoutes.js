@@ -8,6 +8,7 @@ getReviewById,
 deleteReview,
 approveReview,
 getFiltredReviews,
+getFiltredPendingReviews,
 getSuggestions,
 rateReview
 } = require("../controllers/reviewController");
@@ -20,11 +21,15 @@ router.put("/approve/:reviewId", roleAuth(["admin"]), approveReview);
 
 // Get operations (specific routes first)
 router.get("/:reviewId", roleAuth(["admin", "client"]), getReviewById);
-router.get("/bad/:page", roleAuth(["admin", "client"]), getBadReviews);
-router.get("/good/:page", roleAuth(["admin", "client"]), getGoodReviews);
-router.get("/list/:page", roleAuth(["admin"]), getNonApprovedReviews);
-router.get("/:filter/:search", roleAuth(["admin", "client"]), getSuggestions);
+// router.get("/bad/:page", roleAuth(["admin", "client"]), getBadReviews);
+// router.get("/good/:page", roleAuth(["admin", "client"]), getGoodReviews);
+// router.get("/list/:page", roleAuth(["admin"]), getNonApprovedReviews);
+router.get("/pending/:page/:search?", roleAuth(["admin", "client"]), getFiltredPendingReviews);
+router.get("/suggest/:filter/:search?", roleAuth(["admin", "client"]), getSuggestions);
 router.get("/:filter/:page/:search?", roleAuth(["admin", "client"]), getFiltredReviews);
+
+
+
 
 
 

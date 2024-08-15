@@ -47,22 +47,21 @@ exports.addReview = async (req, res, next) => {
       if (error.code === 11000) {
         res.status(400).json({ message: "Review name must be unique." });
       } else {
-      res
-        .status(400)
-        .json({ message: "An error occurred", error: error.message });
-    }}
+        res
+          .status(400)
+          .json({ message: "An error occurred", error: error.message });
+      }
+    }
   });
 };
 
 exports.getNonApprovedReviews = async (req, res) => {
   try {
     const { page } = req.params;
-    const limit = 10;
+    const limit = 3;
 
-    // Calculate skip based on page number
     const skip = (page - 1) * limit;
 
-    // Fetch non-approved reviews with pagination
     const reviews = await Review.find({ approved: false })
       .populate("user", "displayName image")
       .sort({ createdAt: -1 })
@@ -97,7 +96,7 @@ exports.approveReview = async (req, res) => {
 exports.getBadReviews = async (req, res) => {
   try {
     const { page } = req.params;
-    const limit = 3;
+    const limit = 10;
     const reviews = await Review.find({ approved: true, review: false })
       .populate("user", "displayName image")
       .sort({ createdAt: -1 })
@@ -115,7 +114,7 @@ exports.getBadReviews = async (req, res) => {
 exports.getGoodReviews = async (req, res) => {
   try {
     const { page } = req.params;
-    const limit = 3;
+    const limit = 10;
     const reviews = await Review.find({ approved: true, review: true })
       .populate("user", "displayName image")
       .sort({ createdAt: -1 })
@@ -132,12 +131,22 @@ exports.getGoodReviews = async (req, res) => {
 
 exports.getReviewById = async (req, res) => {
   const { reviewId } = req.params;
+  const userId = req.user.user._id;
   try {
-    const review = await Review.findById(reviewId).populate(
-      "user",
-      "displayName image"
+    const review = await Review.findById(reviewId)
+      .populate("user", "displayName image")
+      .lean();
+    if (!review) {
+      return res.status(404).json({ message: "Aucun Review trouvée" });
+    }
+    const ratings = review.ratings || [];
+    const userHasRated = ratings.some(
+      (rating) => rating.user.toString() === userId.toString()
     );
-    res.status(200).json(review);
+    const { ratings: _, ...reviewWithoutRatings } = review;
+
+    const ratePercentage = ratings.length || 0;
+    res.status(200).json({ data:reviewWithoutRatings, ratePercentage, userHasRated });
   } catch (error) {
     res
       .status(400)
@@ -151,13 +160,10 @@ exports.getFiltredReviews = async (req, res) => {
     const limit = 10;
     let matchQuery = {};
 
-    // Construct the query based on the filter
     if (filter === "positive") {
       matchQuery = { approved: true, review: true };
     } else if (filter === "negative") {
       matchQuery = { approved: true, review: false };
-    } else if (filter === "pending") {
-      matchQuery = { approved: false };
     }
 
     const aggregationPipeline = [];
@@ -175,7 +181,61 @@ exports.getFiltredReviews = async (req, res) => {
 
     aggregationPipeline.push({ $unwind: "$user" });
 
-    if (search) {
+    if (search && search.trim() !== "") {
+      aggregationPipeline.push({
+        $match: {
+          name: { $regex: new RegExp(search, "i") },
+        },
+      });
+    }
+
+    aggregationPipeline.push({
+      $project: {
+        _id: 1,
+        name: 1,
+        ratingPercentage: { $size: { $ifNull: ["$ratings", []] } },
+        stars: { $ifNull: ["$stars", 0] },
+        // user: { displayName: "$user.displayName", image: "$user.image" },
+      },
+    });
+
+    // aggregationPipeline.push({ $sort: { createdAt: -1 } });
+    aggregationPipeline.push({ $skip: (page - 1) * limit });
+    aggregationPipeline.push({ $limit: limit });
+
+    const reviews = await Review.aggregate(aggregationPipeline);
+
+    res.status(200).json(reviews);
+  } catch (error) {
+    res
+      .status(400)
+      .json({ message: "An error occurred", error: error.message });
+  }
+};
+exports.getFiltredPendingReviews = async (req, res) => {
+  const { page, search } = req.params;
+  try {
+    const limit = 3;
+    let matchQuery = {};
+
+    matchQuery = { approved: false };
+
+    const aggregationPipeline = [];
+
+    aggregationPipeline.push({ $match: matchQuery });
+
+    aggregationPipeline.push({
+      $lookup: {
+        from: "users",
+        localField: "user",
+        foreignField: "_id",
+        as: "user",
+      },
+    });
+
+    aggregationPipeline.push({ $unwind: "$user" });
+
+    if (search && search.trim() !== "") {
       aggregationPipeline.push({
         $match: {
           $or: [
@@ -194,7 +254,8 @@ exports.getFiltredReviews = async (req, res) => {
         images: 1,
         review: 1,
         message: 1,
-        approved: 1,
+        rating: 1,
+        stars: 1,
         createdAt: 1,
         user: { displayName: "$user.displayName", image: "$user.image" },
       },
@@ -203,7 +264,6 @@ exports.getFiltredReviews = async (req, res) => {
     aggregationPipeline.push({ $sort: { createdAt: -1 } });
     aggregationPipeline.push({ $skip: (page - 1) * limit });
     aggregationPipeline.push({ $limit: limit });
-
     const reviews = await Review.aggregate(aggregationPipeline);
 
     res.status(200).json(reviews);
@@ -226,7 +286,7 @@ exports.getSuggestions = async (req, res) => {
     } else if (filter === "negative") {
       matchQuery = { approved: true, review: false };
     } else if (filter === "pending") {
-      matchQuery = { approved: false };
+      matchQuery = { approved: false};
     }
     const searchRegex = new RegExp(search, "i");
     const aggregationPipeline = [];
@@ -243,7 +303,7 @@ exports.getSuggestions = async (req, res) => {
     });
 
     aggregationPipeline.push({ $unwind: "$user" });
-
+    if (search && search.trim() !== "") {
     aggregationPipeline.push({
       $facet: {
         reviews: [
@@ -278,10 +338,10 @@ exports.getSuggestions = async (req, res) => {
         ],
       },
     });
-
+  }
     const results = await Review.aggregate(aggregationPipeline);
-    
-    const suggestions = [...results[0].reviews, ...results[0].users];
+
+    const suggestions = [...results[0].reviews||[], ...results[0].users||[]];
 
     res.status(200).json(suggestions.map(s => s._id));
   } catch (error) {
@@ -319,7 +379,11 @@ exports.rateReview = async (req, res) => {
 
     await review.save();
 
-    res.status(200).json(review);
+    res.status(200).json({
+      message: "Rating updated successfully",
+      stars: review.stars,
+      ratingPercentage: review.ratings.length,
+    });
   } catch (error) {
     res
       .status(400)
