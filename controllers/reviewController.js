@@ -146,7 +146,9 @@ exports.getReviewById = async (req, res) => {
     const { ratings: _, ...reviewWithoutRatings } = review;
 
     const ratePercentage = ratings.length || 0;
-    res.status(200).json({ data:reviewWithoutRatings, ratePercentage, userHasRated });
+    res
+      .status(200)
+      .json({ data: reviewWithoutRatings, ratePercentage, userHasRated });
   } catch (error) {
     res
       .status(400)
@@ -275,7 +277,7 @@ exports.getFiltredPendingReviews = async (req, res) => {
 };
 exports.getSuggestions = async (req, res) => {
   const { filter, search } = req.params;
-  console.log(search)
+  console.log(search);
   try {
     const limit = 10;
     let matchQuery = {};
@@ -286,7 +288,7 @@ exports.getSuggestions = async (req, res) => {
     } else if (filter === "negative") {
       matchQuery = { approved: true, review: false };
     } else if (filter === "pending") {
-      matchQuery = { approved: false};
+      matchQuery = { approved: false };
     }
     const searchRegex = new RegExp(search, "i");
     const aggregationPipeline = [];
@@ -304,46 +306,49 @@ exports.getSuggestions = async (req, res) => {
 
     aggregationPipeline.push({ $unwind: "$user" });
     if (search && search.trim() !== "") {
-    aggregationPipeline.push({
-      $facet: {
-        reviews: [
-          {
-            $match: { name: { $regex: searchRegex } },
-          },
-          {
-            $project: { name: 1, _id: 0 },
-          },
-          {
-            $group: {
-              _id: "$name",
+      aggregationPipeline.push({
+        $facet: {
+          reviews: [
+            {
+              $match: { name: { $regex: searchRegex } },
             },
-          },
-          { $sort: { _id: 1 } },
-          { $limit: limit },
-        ],
-        users: [
-          {
-            $match: { "user.displayName": { $regex: searchRegex } },
-          },
-          {
-            $project: { name: "$user.displayName", _id: 0 },
-          },
-          {
-            $group: {
-              _id: "$name",
+            {
+              $project: { name: 1, _id: 0 },
             },
-          },
-          { $sort: { _id: 1 } },
-          { $limit: limit },
-        ],
-      },
-    });
-  }
+            {
+              $group: {
+                _id: "$name",
+              },
+            },
+            { $sort: { _id: 1 } },
+            { $limit: limit },
+          ],
+          users: [
+            {
+              $match: { "user.displayName": { $regex: searchRegex } },
+            },
+            {
+              $project: { name: "$user.displayName", _id: 0 },
+            },
+            {
+              $group: {
+                _id: "$name",
+              },
+            },
+            { $sort: { _id: 1 } },
+            { $limit: limit },
+          ],
+        },
+      });
+    }
     const results = await Review.aggregate(aggregationPipeline);
 
-    const suggestions = [...results[0].reviews||[], ...results[0].users||[]];
+    const suggestions = [
+      ...(results[0].reviews || []),
+      ...(results[0].users || []),
+    ];
 
-    res.status(200).json(suggestions.map(s => s._id));
+    res.status(200).json(suggestions.map((s) => s._id));
   } catch (error) {
     res
       .status(400)
@@ -366,16 +371,21 @@ exports.rateReview = async (req, res) => {
     );
 
     if (existingRating) {
-      existingRating.stars = stars;
+      if (stars === 0) {
+        review.ratings = review.ratings.filter(
+          (r) => r.user.toString() !== userId.toString()
+        );
+      } else {
+        existingRating.stars = stars;
+      }
     } else {
-      review.ratings.push({ user: userId, stars });
+      if (stars !== 0) {
+        review.ratings.push({ user: userId, stars });
+      }
     }
 
-    const totalStars = review.ratings.reduce(
-      (acc, rate) => acc + rate.stars,
-      0
-    );
-    review.stars = totalStars / review.ratings.length;
+    const totalStars = review.ratings.reduce((acc, rate) => acc + rate.stars, 0);
+    review.stars = review.ratings.length > 0 ? totalStars / review.ratings.length : 0;
 
     await review.save();
 
