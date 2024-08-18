@@ -225,9 +225,10 @@ exports.getFiltredReviews = async (req, res) => {
 
     aggregationPipeline.push({
       $sort: {
-        isNew: -1,
-        stars: -1,
-        createdAt: -1,
+        isNew: -1,            
+        ratingPercentage: -1,       
+        stars: -1,             
+        createdAt: -1  
       },
     });
     aggregationPipeline.push({ $skip: (page - 1) * limit });

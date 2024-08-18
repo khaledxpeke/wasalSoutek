@@ -3,7 +3,6 @@ const ReviewSchema = new Mongoose.Schema({
   name: {
     type: String,
     required: true,
-    unique: true,
   },
   link: {
     type: String,
