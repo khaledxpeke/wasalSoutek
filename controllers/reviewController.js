@@ -219,7 +219,7 @@ exports.getFiltredReviews = async (req, res) => {
         isNew: {
           $gte: ["$createdAt", new Date(Date.now() - 24 * 60 * 60 * 1000)]
         },
-        // user: { displayName: "$user.displayName", image: "$user.image" },
+        user:  "$user._id" ,
       },
     });
 
