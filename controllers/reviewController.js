@@ -185,10 +185,12 @@ exports.getFiltredReviews = async (req, res) => {
 
     if (search && search.trim() !== "") {
       aggregationPipeline.push({
-        $or: [
+        $match: {
+          $or: [
             { "user.displayName": { $regex: new RegExp(search, "i") } },
             { name: { $regex: new RegExp(search, "i") } },
           ],
+        },
       });
     }
 
@@ -202,7 +204,12 @@ exports.getFiltredReviews = async (req, res) => {
       },
     });
 
-    // aggregationPipeline.push({ $sort: { createdAt: -1 } });
+    aggregationPipeline.push({
+      $sort: {
+        stars: -1,
+        createdAt: -1,
+      },
+    });
     aggregationPipeline.push({ $skip: (page - 1) * limit });
     aggregationPipeline.push({ $limit: limit });
 
@@ -264,7 +271,11 @@ exports.getFiltredPendingReviews = async (req, res) => {
       },
     });
 
-    aggregationPipeline.push({ $sort: { createdAt: -1 } });
+    aggregationPipeline.push({
+      $sort: {
+        createdAt: -1,
+      },
+    });
     aggregationPipeline.push({ $skip: (page - 1) * limit });
     aggregationPipeline.push({ $limit: limit });
     const reviews = await Review.aggregate(aggregationPipeline);
@@ -385,8 +396,12 @@ exports.rateReview = async (req, res) => {
       }
     }
 
-    const totalStars = review.ratings.reduce((acc, rate) => acc + rate.stars, 0);
-    review.stars = review.ratings.length > 0 ? totalStars / review.ratings.length : 0;
+    const totalStars = review.ratings.reduce(
+      (acc, rate) => acc + rate.stars,
+      0
+    );
+    review.stars =
+      review.ratings.length > 0 ? totalStars / review.ratings.length : 0;
 
     await review.save();
 
