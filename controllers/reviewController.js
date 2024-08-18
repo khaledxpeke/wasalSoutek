@@ -185,9 +185,10 @@ exports.getFiltredReviews = async (req, res) => {
 
     if (search && search.trim() !== "") {
       aggregationPipeline.push({
-        $match: {
-          name: { $regex: new RegExp(search, "i") },
-        },
+        $or: [
+            { "user.displayName": { $regex: new RegExp(search, "i") } },
+            { name: { $regex: new RegExp(search, "i") } },
+          ],
       });
     }
 
