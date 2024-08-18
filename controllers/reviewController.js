@@ -76,6 +76,19 @@ exports.getNonApprovedReviews = async (req, res) => {
   }
 };
 
+exports.getAllReviews = async (req, res) => {
+  try {
+    const reviews = await Review.find({approved: false});
+    const length = reviews.length;
+
+    res.status(200).json(length);
+  } catch (error) {
+    res
+      .status(400)
+      .json({ message: "An error occurred", error: error.message });
+  }
+};
+
 exports.approveReview = async (req, res) => {
   const { reviewId } = req.params;
   try {
