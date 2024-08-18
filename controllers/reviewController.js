@@ -76,7 +76,7 @@ exports.getNonApprovedReviews = async (req, res) => {
   }
 };
 
-exports.getAllReviews = async (req, res) => {
+exports.getAllPendingReviews = async (req, res) => {
   try {
     const reviews = await Review.find({approved: false});
     const length = reviews.length;

@@ -10,7 +10,7 @@ approveReview,
 getFiltredReviews,
 getFiltredPendingReviews,
 getSuggestions,
-getAllReviews,
+getAllPendingReviews,
 rateReview
 } = require("../controllers/reviewController");
 const  {roleAuth}  = require("../middleware/auth");
@@ -21,7 +21,7 @@ router.delete("/:reviewId", roleAuth(["admin", "client"]), deleteReview);
 router.put("/approve/:reviewId", roleAuth(["admin"]), approveReview);
 
 // Get operations (specific routes first)
-router.get("/", roleAuth(["admin"]), getAllReviews);
+router.get("/", roleAuth(["admin"]), getAllPendingReviews);
 router.get("/:reviewId", roleAuth(["admin", "client"]), getReviewById);
 // router.get("/bad/:page", roleAuth(["admin", "client"]), getBadReviews);
 // router.get("/good/:page", roleAuth(["admin", "client"]), getGoodReviews);
