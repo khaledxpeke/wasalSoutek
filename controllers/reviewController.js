@@ -216,12 +216,16 @@ exports.getFiltredReviews = async (req, res) => {
         name: 1,
         ratingPercentage: { $size: { $ifNull: ["$ratings", []] } },
         stars: { $ifNull: ["$stars", 0] },
+        isNew: {
+          $gte: ["$createdAt", new Date(Date.now() - 24 * 60 * 60 * 1000)]
+        },
         // user: { displayName: "$user.displayName", image: "$user.image" },
       },
     });
 
     aggregationPipeline.push({
       $sort: {
+        isNew: -1,
         stars: -1,
         createdAt: -1,
       },
