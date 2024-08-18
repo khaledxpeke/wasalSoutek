@@ -81,7 +81,7 @@ exports.getAllPendingReviews = async (req, res) => {
     const reviews = await Review.find({approved: false});
     const length = reviews.length;
 
-    res.status(200).json(length);
+    res.status(200).json({size:length});
   } catch (error) {
     res
       .status(400)
