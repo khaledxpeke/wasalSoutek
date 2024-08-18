@@ -156,12 +156,15 @@ exports.getReviewById = async (req, res) => {
     const userHasRated = ratings.some(
       (rating) => rating.user.toString() === userId.toString()
     );
+    const userStars = userHasRated ? ratings.find( 
+      (rating) => rating.user.toString() === userId.toString()
+    ).stars : 0;
     const { ratings: _, ...reviewWithoutRatings } = review;
 
     const ratePercentage = ratings.length || 0;
     res
       .status(200)
-      .json({ data: reviewWithoutRatings, ratePercentage, userHasRated });
+      .json({ data: reviewWithoutRatings, ratePercentage, userHasRated ,userStars});
   } catch (error) {
     res
       .status(400)
