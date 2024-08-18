@@ -31,6 +31,7 @@ exports.getComments = async (req, res) => {
     const comments = await Comment.find({ review: reviewId })
       .populate("user", "displayName image")
       .skip((page - 1) * limit)
+      .sort({ createdAt: -1 })
       .limit(parseInt(limit));
     res.status(200).json(comments);
   } catch (error) {
