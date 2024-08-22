@@ -97,6 +97,7 @@ exports.approveReview = async (req, res) => {
       return res.status(404).json({ message: "Review not found" });
     }
     review.approved = true;
+    review.createdAt = Date.now();
     await review.save();
     res.status(200).json({ message: "Review approved successfully" });
   } catch (error) {
