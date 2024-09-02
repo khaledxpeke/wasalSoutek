@@ -78,10 +78,10 @@ exports.getNonApprovedReviews = async (req, res) => {
 
 exports.getAllPendingReviews = async (req, res) => {
   try {
-    const reviews = await Review.find({approved: false});
+    const reviews = await Review.find({ approved: false });
     const length = reviews.length;
 
-    res.status(200).json({size:length});
+    res.status(200).json({ size: length });
   } catch (error) {
     res
       .status(400)
@@ -157,15 +157,19 @@ exports.getReviewById = async (req, res) => {
     const userHasRated = ratings.some(
       (rating) => rating.user.toString() === userId.toString()
     );
-    const userStars = userHasRated ? ratings.find( 
-      (rating) => rating.user.toString() === userId.toString()
-    ).stars : 0;
+    const userStars = userHasRated
+      ? ratings.find((rating) => rating.user.toString() === userId.toString())
+          .stars
+      : 0;
     const { ratings: _, ...reviewWithoutRatings } = review;
 
     const ratePercentage = ratings.length || 0;
-    res
-      .status(200)
-      .json({ data: reviewWithoutRatings, ratePercentage, userHasRated ,userStars});
+    res.status(200).json({
+      data: reviewWithoutRatings,
+      ratePercentage,
+      userHasRated,
+      userStars,
+    });
   } catch (error) {
     res
       .status(400)
@@ -210,31 +214,57 @@ exports.getFiltredReviews = async (req, res) => {
         },
       });
     }
+    aggregationPipeline.push({
+      $addFields: {
+        normalizedName: { $toLower: "$name" },
+      },
+    });
+    aggregationPipeline.push({
+      $group: {
+        _id: "$normalizedName",
+        stars: { $avg: { $ifNull: ["$stars", 0] } },
+        ratingPercentage: { $sum: { $size: { $ifNull: ["$ratings", []] } } },
+        createdAt: { $min: "$createdAt" },
+        user: { $first: "$user.displayName" },
+        count: { $sum: 1 },
+        originalName: { $first: "$name" },
+      },
+    });
 
     aggregationPipeline.push({
-      $project: {
-        _id: 1,
-        name: 1,
-        ratingPercentage: { $size: { $ifNull: ["$ratings", []] } },
-        stars: { $ifNull: ["$stars", 0] },
-        isNew: {
-          $gte: ["$createdAt", new Date(Date.now() - 24 * 60 * 60 * 1000)]
+      $addFields: {
+        stars: { $round: ["$stars", 3] },
+        grouped: {
+          $cond: { if: { $gt: ["$count", 1] }, then: true, else: false },
         },
-        user:  "$user._id" ,
+        isNew: {
+          $gte: ["$createdAt", new Date(Date.now() - 24 * 60 * 60 * 1000)],
+        },
       },
     });
 
     aggregationPipeline.push({
       $sort: {
-        isNew: -1,            
-        ratingPercentage: -1,       
-        stars: -1,             
-        createdAt: -1  
+        isNew: -1,
+        ratingPercentage: -1,
+        stars: -1,
+        createdAt: -1,
       },
     });
     aggregationPipeline.push({ $skip: (page - 1) * limit });
     aggregationPipeline.push({ $limit: limit });
 
+    aggregationPipeline.push({
+      $project: {
+        _id: 0,
+        name: "$originalName",
+        stars: 1,
+        ratingPercentage: 1,
+        isNew: 1,
+        grouped: 1,
+        user: 1,
+      },
+    });
     const reviews = await Review.aggregate(aggregationPipeline);
 
     res.status(200).json(reviews);
@@ -244,6 +274,58 @@ exports.getFiltredReviews = async (req, res) => {
       .json({ message: "An error occurred", error: error.message });
   }
 };
+
+exports.getGroupedReviews = async (req, res) => {
+  const { name } = req.params;
+  try {
+    const aggregationPipeline = [];
+
+    const normalizedQueryName = name.toLowerCase();
+    aggregationPipeline.push({
+      $addFields: {
+        normalizedName: { $toLower: "$name" },
+      },
+    });
+
+    aggregationPipeline.push({
+      $match: {
+        normalizedName: normalizedQueryName,
+      },
+    });
+    aggregationPipeline.push({
+      $lookup: {
+        from: "users",
+        localField: "user",
+        foreignField: "_id",
+        as: "user",
+      },
+    });
+    aggregationPipeline.push({
+      $unwind: {
+        path: "$user",
+        preserveNullAndEmptyArrays: true,
+      },
+    });
+    aggregationPipeline.push({
+      $project: {
+        _id: 0,
+        name: 1,
+        stars: 1,
+        ratingPercentage: { $size: { $ifNull: ["$ratings", []] } },
+        user: "$user.displayName",
+      },
+    });
+
+    const groupedReviews = await Review.aggregate(aggregationPipeline);
+
+    res.status(200).json(groupedReviews);
+  } catch (error) {
+    res
+      .status(400)
+      .json({ message: "An error occurred", error: error.message });
+  }
+};
+
 exports.getFiltredPendingReviews = async (req, res) => {
   const { page, search } = req.params;
   try {
@@ -311,12 +393,10 @@ exports.getFiltredPendingReviews = async (req, res) => {
 };
 exports.getSuggestions = async (req, res) => {
   const { filter, search } = req.params;
-  console.log(search);
   try {
     const limit = 10;
     let matchQuery = {};
 
-    // Construct the query based on the filter
     if (filter === "positive") {
       matchQuery = { approved: true, review: true };
     } else if (filter === "negative") {
@@ -328,6 +408,12 @@ exports.getSuggestions = async (req, res) => {
     const aggregationPipeline = [];
 
     aggregationPipeline.push({ $match: matchQuery });
+
+    aggregationPipeline.push({
+      $addFields: {
+        normalizedName: { $toLower: "$name" },
+      },
+    });
 
     aggregationPipeline.push({
       $lookup: {
@@ -344,14 +430,15 @@ exports.getSuggestions = async (req, res) => {
         $facet: {
           reviews: [
             {
-              $match: { name: { $regex: searchRegex } },
+              $match: { normalizedName: { $regex: searchRegex } },
             },
             {
-              $project: { name: 1, _id: 0 },
+              $project: { name: 1, normalizedName: 1, _id: 0 },
             },
             {
               $group: {
-                _id: "$name",
+                _id: "$normalizedName",
+                name: { $first: "$name" },
               },
             },
             { $sort: { _id: 1 } },
@@ -362,11 +449,16 @@ exports.getSuggestions = async (req, res) => {
               $match: { "user.displayName": { $regex: searchRegex } },
             },
             {
-              $project: { name: "$user.displayName", _id: 0 },
+              $project: {
+                name: "$user.displayName",
+                normalizedName: { $toLower: "$user.displayName" },
+                _id: 0,
+              },
             },
             {
               $group: {
-                _id: "$name",
+                _id: "$normalizedName",
+                name: { $first: "$name" },
               },
             },
             { $sort: { _id: 1 } },
@@ -382,7 +474,7 @@ exports.getSuggestions = async (req, res) => {
       ...(results[0].users || []),
     ];
 
-    res.status(200).json(suggestions.map((s) => s._id));
+    res.status(200).json(suggestions.map((s) => s.name));
   } catch (error) {
     res
       .status(400)
@@ -466,5 +558,67 @@ exports.deleteReview = async (req, res) => {
     res
       .status(400)
       .json({ message: "An error occurred", error: error.message });
+  }
+};
+
+exports.editReview = async (req, res) => {
+  const { reviewId } = req.params;
+  const updates = req.body;
+
+  try {
+    if (!Object.keys(updates).length) {
+      return res
+        .status(400)
+        .json({ message: "No fields provided for update." });
+    }
+
+    const updatedReview = await Review.findByIdAndUpdate(
+      reviewId,
+      { $set: updates },
+      { new: true, runValidators: true } 
+    );
+    if (!updatedReview) {
+      return res.status(404).json({ message: "aucun Review trouvée." });
+    }
+
+    res.status(200).json(updatedReview);
+  } catch (error) {
+    res
+      .status(400)
+      .json({ message: "An error occurred", error: error.message });
+  }
+};
+
+exports.updateGroupedReviewName = async (req, res) => {
+  const { reviewId } = req.params;
+  const { name } = req.body;
+
+  try {
+    if (!name || !name.trim()) {
+      return res.status(400).json({ message: "Nouveaux nom est obligatoire." });
+    }
+
+    const review = await Review.findById(reviewId);
+    if (!review) {
+      return res.status(404).json({ message: "aucun Review trouvée." });
+    }
+
+
+    const currentName = review.name.toLowerCase();
+    const normalizedNewName = name.trim().toLowerCase();
+
+
+    if (currentName === normalizedNewName) {
+      return res.status(200).json({ message: "Aucun changement." });
+    }
+
+    await Review.updateMany(
+      { name: { $regex: new RegExp(`^${currentName}$`, 'i') } },
+      { $set: { name: name.trim() } }
+    );
+
+    res.status(200).json({ message: "reviews groupée modifiée avec succées." });
+  } catch (error) {
+    res.status(400).json({ message: "An error occurred", error: error.message });
   }
 };
