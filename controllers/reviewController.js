@@ -247,6 +247,7 @@ exports.getFiltredReviews = async (req, res) => {
     aggregationPipeline.push({
       $sort: {
         isNew: -1,
+        grouped: -1,
         ratingPercentage: -1,
         stars: -1,
         createdAt: -1,
