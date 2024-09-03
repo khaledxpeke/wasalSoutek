@@ -258,7 +258,7 @@ exports.getFiltredReviews = async (req, res) => {
 
     aggregationPipeline.push({
       $project: {
-        _id: "$originalId", 
+        _id: "$originalId",
         name: "$originalName",
         stars: 1,
         ratingPercentage: 1,
@@ -564,31 +564,66 @@ exports.deleteReview = async (req, res) => {
 };
 
 exports.editReview = async (req, res) => {
-  const { reviewId } = req.params;
-  const updates = req.body;
+  upload(req, res, async (err) => {
+    if (err) {
+      return res.status(400).json({ message: err.message });
+    }
+    const { reviewId } = req.params;
+    let { removeImages = '[]', ...updates } = req.body;
+    if (typeof removeImages === "string") {
+      try {
+        removeImages = JSON.parse(removeImages);
+      } catch (parseError) {
+        console.error("Failed to parse removeImages:", parseError);
+        return res
+          .status(400)
+          .json({ message: "Invalid format for removeImages." });
+      }
+    }
 
-  try {
-    if (!Object.keys(updates).length) {
-      return res
+    try {
+
+      const review = await Review.findById(reviewId);
+
+      if (!review) {
+        return res.status(404).json({ message: "No review found." });
+      }
+      const imageDir = path.join(__dirname, "..", "uploads");
+      if (Array.isArray(removeImages) && removeImages.length > 0) {
+        removeImages.forEach((imageName) => {
+          const imagePath = path.join(imageDir, imageName);
+          if (review.images.includes(imageName)) {
+            if (fs.existsSync(imagePath)) {
+              try {
+                fs.unlinkSync(imagePath);
+              } catch (unlinkError) {
+                console.error("Failed to remove image file:", unlinkError);
+              }
+            } else {
+              console.warn(`Image file not found: ${imagePath}`);
+            }
+            review.images = review.images.filter((img) => img !== imageName);
+          }
+        });
+      }
+
+      if (req.files && req.files.length > 0) {
+        req.files.forEach((file) => {
+          review.images.push(file.filename);
+        });
+      }
+
+      Object.assign(review, updates);
+
+      const updatedReview = await review.save();
+
+      res.status(200).json(updatedReview);
+    } catch (error) {
+      res
         .status(400)
-        .json({ message: "No fields provided for update." });
+        .json({ message: "An error occurred", error: error.message });
     }
-
-    const updatedReview = await Review.findByIdAndUpdate(
-      reviewId,
-      { $set: updates },
-      { new: true, runValidators: true } 
-    );
-    if (!updatedReview) {
-      return res.status(404).json({ message: "aucun Review trouvée." });
-    }
-
-    res.status(200).json(updatedReview);
-  } catch (error) {
-    res
-      .status(400)
-      .json({ message: "An error occurred", error: error.message });
-  }
+  });
 };
 
 exports.updateGroupedReviewName = async (req, res) => {
@@ -605,22 +640,22 @@ exports.updateGroupedReviewName = async (req, res) => {
       return res.status(404).json({ message: "aucun Review trouvée." });
     }
 
-
     const currentName = review.name.toLowerCase();
     const normalizedNewName = name.trim().toLowerCase();
-
 
     if (currentName === normalizedNewName) {
       return res.status(200).json({ message: "Aucun changement." });
     }
 
     await Review.updateMany(
-      { name: { $regex: new RegExp(`^${currentName}$`, 'i') } },
+      { name: { $regex: new RegExp(`^${currentName}$`, "i") } },
       { $set: { name: name.trim() } }
     );
 
     res.status(200).json({ message: "reviews groupée modifiée avec succées." });
   } catch (error) {
-    res.status(400).json({ message: "An error occurred", error: error.message });
+    res
+      .status(400)
+      .json({ message: "An error occurred", error: error.message });
   }
 };
