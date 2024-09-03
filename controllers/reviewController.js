@@ -228,6 +228,7 @@ exports.getFiltredReviews = async (req, res) => {
         user: { $first: "$user.displayName" },
         count: { $sum: 1 },
         originalName: { $first: "$name" },
+        originalId: { $first: "$_id" },
       },
     });
 
@@ -256,7 +257,7 @@ exports.getFiltredReviews = async (req, res) => {
 
     aggregationPipeline.push({
       $project: {
-        _id: 0,
+        _id: "$originalId", 
         name: "$originalName",
         stars: 1,
         ratingPercentage: 1,
@@ -308,7 +309,7 @@ exports.getGroupedReviews = async (req, res) => {
     });
     aggregationPipeline.push({
       $project: {
-        _id: 0,
+        _id: 1,
         name: 1,
         stars: 1,
         ratingPercentage: { $size: { $ifNull: ["$ratings", []] } },
