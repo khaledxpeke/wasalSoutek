@@ -521,11 +521,34 @@ exports.rateReview = async (req, res) => {
 
     await review.save();
 
-    res.status(200).json({
-      message: "Rating updated successfully",
-      stars: review.stars,
-      ratingPercentage: review.ratings.length,
+    const groupReviews = await Review.find({
+      name: new RegExp(`^${review.name}$`, "i"),
     });
+    if (groupReviews.length > 1) {
+      console.log("test", groupReviews);
+      const groupTotalStars = groupReviews.reduce((acc, rev) => {
+        return acc + rev.ratings.reduce((acc2, rate) => acc2 + rate.stars, 0);
+      }, 0);
+
+      const groupTotalRatings = groupReviews.reduce(
+        (acc, rev) => acc + rev.ratings.length,
+        0
+      );
+
+      const groupAverageStars =
+        groupTotalRatings > 0 ? groupTotalStars / groupTotalRatings : 0;
+      res.status(200).json({
+        message: "Rating updated successfully",
+        groupedstars: groupAverageStars,
+        groupedratingPercentage: groupTotalRatings,
+      });
+    } else {
+      res.status(200).json({
+        message: "Rating updated successfully",
+        stars: review.stars,
+        ratingPercentage: review.ratings.length,
+      });
+    }
   } catch (error) {
     res
       .status(400)
@@ -569,7 +592,7 @@ exports.editReview = async (req, res) => {
       return res.status(400).json({ message: err.message });
     }
     const { reviewId } = req.params;
-    let { removeImages = '[]', ...updates } = req.body;
+    let { removeImages = "[]", ...updates } = req.body;
     if (typeof removeImages === "string") {
       try {
         removeImages = JSON.parse(removeImages);
@@ -582,7 +605,6 @@ exports.editReview = async (req, res) => {
     }
 
     try {
-
       const review = await Review.findById(reviewId);
 
       if (!review) {
