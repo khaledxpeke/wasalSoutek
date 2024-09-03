@@ -541,6 +541,8 @@ exports.rateReview = async (req, res) => {
         message: "Rating updated successfully",
         groupedstars: groupAverageStars,
         groupedratingPercentage: groupTotalRatings,
+        stars: review.stars,
+        ratingPercentage: review.ratings.length,
       });
     } else {
       res.status(200).json({
