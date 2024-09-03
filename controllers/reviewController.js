@@ -396,7 +396,7 @@ exports.getFiltredPendingReviews = async (req, res) => {
 exports.getSuggestions = async (req, res) => {
   const { filter, search } = req.params;
   try {
-    const limit = 10;
+    const limit = 5;
     let matchQuery = {};
 
     if (filter === "positive") {
