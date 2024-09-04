@@ -23,7 +23,7 @@ router.post("/", roleAuth(["admin", "client"]), addReview);
 router.post("/rate/:reviewId", roleAuth(["admin", "client"]), rateReview);
 router.delete("/:reviewId", roleAuth(["admin", "client"]), deleteReview);
 router.put("/:reviewId", roleAuth(["admin"]),editReview );
-router.put("/update/:reviewId", roleAuth(["admin"]),updateGroupedReviewName );
+router.put("/update/:currentName", roleAuth(["admin"]),updateGroupedReviewName );
 router.put("/approve/:reviewId", roleAuth(["admin"]), approveReview);
 router.get("/grouped/:name", roleAuth(["admin", "client"]), getGroupedReviews);
 router.get("/profil/:search?", roleAuth(["admin", "client"]), getProfilReviews);

@@ -488,7 +488,7 @@ exports.getProfilReviews = async (req, res) => {
   const { search } = req.params;
   const userId = req.user.user._id;
   try {
-    let query = { user: userId };
+    let query = { user: userId, approved: true };
 
     if (search) {
       query.name = new RegExp(search, "i");
@@ -545,8 +545,10 @@ exports.rateReview = async (req, res) => {
       name: new RegExp(`^${review.name}$`, "i"),
     });
     if (groupReviews.length > 1) {
-      const groupTotalStars = groupReviews.reduce((acc, rev) => acc + rev.stars, 0);
-
+      const groupTotalStars = groupReviews.reduce(
+        (acc, rev) => acc + rev.stars,
+        0
+      );
 
       const groupTotalRatings = groupReviews.reduce(
         (acc, rev) => acc + rev.ratings.length,
@@ -554,17 +556,21 @@ exports.rateReview = async (req, res) => {
       );
 
       const groupAverageStars = groupTotalStars / groupReviews.length;
+
+      const roundedGroupAverageStars = parseFloat(groupAverageStars.toFixed(3));
+      const roundedReviewStars = parseFloat(review.stars.toFixed(3));
       res.status(200).json({
         message: "Rating updated successfully",
-        groupedstars: groupAverageStars,
+        groupedstars: roundedGroupAverageStars,
         groupedratingPercentage: groupTotalRatings,
-        stars: review.stars,
+        stars: roundedReviewStars,
         ratingPercentage: review.ratings.length,
       });
     } else {
+      const roundedReviewStars = parseFloat(review.stars.toFixed(3));
       res.status(200).json({
         message: "Rating updated successfully",
-        stars: review.stars,
+        stars: roundedReviewStars,
         ratingPercentage: review.ratings.length,
       });
     }
@@ -668,29 +674,22 @@ exports.editReview = async (req, res) => {
 };
 
 exports.updateGroupedReviewName = async (req, res) => {
-  const { reviewId } = req.params;
-  const { name } = req.body;
-
   try {
-    if (!name || !name.trim()) {
-      return res.status(400).json({ message: "Nouveaux nom est obligatoire." });
-    }
+    const { currentName } = req.params;
+    const { name } = req.body;
 
-    const review = await Review.findById(reviewId);
-    if (!review) {
-      return res.status(404).json({ message: "aucun Review trouvée." });
-    }
-
-    const currentName = review.name.toLowerCase();
+    const normalizedCurrentName = currentName.trim().toLowerCase();
     const normalizedNewName = name.trim().toLowerCase();
-
-    if (currentName === normalizedNewName) {
-      return res.status(200).json({ message: "Aucun changement." });
+    const reviews = await Review.find({
+      name: new RegExp(`^${normalizedCurrentName}$`, "i"),
+    });
+    if (reviews.length === 0) {
+      return res.status(404).json({ message: "Aucun review trouvée." });
     }
 
     await Review.updateMany(
-      { name: { $regex: new RegExp(`^${currentName}$`, "i") } },
-      { $set: { name: name.trim() } }
+      { name: { $regex: new RegExp(`^${normalizedCurrentName}$`, "i") } },
+      { $set: { name: normalizedNewName } }
     );
 
     res.status(200).json({ message: "reviews groupée modifiée avec succées." });
