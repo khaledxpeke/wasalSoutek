@@ -528,14 +528,14 @@ exports.getProfilReviews = async (req, res) => {
             user: "$user.displayName",
           },
         },
-        aggregationPipeline.push({
+        {
           $sort: {
             isNew: -1,
             ratingPercentage: -1,
             stars: -1,
             createdAt: -1,
           },
-        }),
+        },
       ];
 
       const reviews = await Review.aggregate(aggregationPipeline);
