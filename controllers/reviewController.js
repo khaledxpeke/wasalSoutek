@@ -9,6 +9,7 @@ const fs = require("fs");
 const Comment = require("../models/comment");
 const upload = multer({ storage: multerStorage }).array("images");
 const path = require("path");
+const  mongoose  = require("mongoose");
 
 exports.addReview = async (req, res, next) => {
   upload(req, res, async (err) => {
@@ -486,18 +487,56 @@ exports.getSuggestions = async (req, res) => {
 
 exports.getProfilReviews = async (req, res) => {
   const userId = req.user.user._id;
-  try {
-    let query = { user: userId, approved: true };
+    try {
+      const userObjectId = new mongoose.Types.ObjectId(userId);
+      let matchQuery = { approved: true, user: userObjectId };
+      
+      const aggregationPipeline = [
+        { $match: matchQuery },
+  
+        {
+          $lookup: {
+            from: "users",
+            localField: "user",
+            foreignField: "_id",
+            as: "user",
+          },
+        },
+  
+        { $unwind: "$user" },
+  
+        {
+          $addFields: {
+            stars: { $round: ["$stars", 3] },
+            isNew: {
+              $gte: ["$createdAt", new Date(Date.now() - 24 * 60 * 60 * 1000)],
+            },
+          },
+        },
+  
+        {
+          $project: {
+            _id: 1,
+            name: 1,
+            stars: 1,
+            ratingPercentage: {
+              $size: {
+                $ifNull: ["$ratings", []]
+              }
+            },
+            isNew: 1,
+            user: "$user.displayName",
+          },
+        },
+      ];
 
-    const review = await Review.find(query);
-    res.status(200).json(review);
-  } catch (error) {
-    res
-      .status(400)
-      .json({ message: "An error occurred", error: error.message });
-  }
-};
-
+      const reviews = await Review.aggregate(aggregationPipeline);
+  
+      res.status(200).json(reviews);
+    } catch (error) {
+      res.status(400).json({ message: "An error occurred", error: error.message });
+    }
+  };
 exports.rateReview = async (req, res) => {
   try {
     const { reviewId } = req.params;
