@@ -513,7 +513,14 @@ exports.getProfilReviews = async (req, res) => {
             },
           },
         },
-  
+        aggregationPipeline.push({
+          $sort: {
+            isNew: -1,
+            ratingPercentage: -1,
+            stars: -1,
+            createdAt: -1,
+          },
+        }),
         {
           $project: {
             _id: 1,
