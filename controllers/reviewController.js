@@ -485,14 +485,9 @@ exports.getSuggestions = async (req, res) => {
 };
 
 exports.getProfilReviews = async (req, res) => {
-  const { search } = req.params;
   const userId = req.user.user._id;
   try {
     let query = { user: userId, approved: true };
-
-    if (search) {
-      query.name = new RegExp(search, "i");
-    }
 
     const review = await Review.find(query);
     res.status(200).json(review);
