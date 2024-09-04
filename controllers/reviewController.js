@@ -55,26 +55,26 @@ exports.addReview = async (req, res, next) => {
   });
 };
 
-exports.getNonApprovedReviews = async (req, res) => {
-  try {
-    const { page } = req.params;
-    const limit = 3;
+// exports.getNonApprovedReviews = async (req, res) => {
+//   try {
+//     const { page } = req.params;
+//     const limit = 3;
 
-    const skip = (page - 1) * limit;
+//     const skip = (page - 1) * limit;
 
-    const reviews = await Review.find({ approved: false })
-      .populate("user", "displayName image")
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit)
-      .exec();
-    res.status(200).json(reviews);
-  } catch (error) {
-    res
-      .status(400)
-      .json({ message: "An error occurred", error: error.message });
-  }
-};
+//     const reviews = await Review.find({ approved: false })
+//       .populate("user", "displayName image")
+//       .sort({ createdAt: -1 })
+//       .skip(skip)
+//       .limit(limit)
+//       .exec();
+//     res.status(200).json(reviews);
+//   } catch (error) {
+//     res
+//       .status(400)
+//       .json({ message: "An error occurred", error: error.message });
+//   }
+// };
 
 exports.getAllPendingReviews = async (req, res) => {
   try {
@@ -107,41 +107,41 @@ exports.approveReview = async (req, res) => {
   }
 };
 
-exports.getBadReviews = async (req, res) => {
-  try {
-    const { page } = req.params;
-    const limit = 10;
-    const reviews = await Review.find({ approved: true, review: false })
-      .populate("user", "displayName image")
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(parseInt(limit));
+// exports.getBadReviews = async (req, res) => {
+//   try {
+//     const { page } = req.params;
+//     const limit = 10;
+//     const reviews = await Review.find({ approved: true, review: false })
+//       .populate("user", "displayName image")
+//       .sort({ createdAt: -1 })
+//       .skip((page - 1) * limit)
+//       .limit(parseInt(limit));
 
-    res.status(200).json(reviews);
-  } catch (error) {
-    res
-      .status(400)
-      .json({ message: "An error occurred", error: error.message });
-  }
-};
+//     res.status(200).json(reviews);
+//   } catch (error) {
+//     res
+//       .status(400)
+//       .json({ message: "An error occurred", error: error.message });
+//   }
+// };
 
-exports.getGoodReviews = async (req, res) => {
-  try {
-    const { page } = req.params;
-    const limit = 10;
-    const reviews = await Review.find({ approved: true, review: true })
-      .populate("user", "displayName image")
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(parseInt(limit));
+// exports.getGoodReviews = async (req, res) => {
+//   try {
+//     const { page } = req.params;
+//     const limit = 10;
+//     const reviews = await Review.find({ approved: true, review: true })
+//       .populate("user", "displayName image")
+//       .sort({ createdAt: -1 })
+//       .skip((page - 1) * limit)
+//       .limit(parseInt(limit));
 
-    res.status(200).json(reviews);
-  } catch (error) {
-    res
-      .status(400)
-      .json({ message: "An error occurred", error: error.message });
-  }
-};
+//     res.status(200).json(reviews);
+//   } catch (error) {
+//     res
+//       .status(400)
+//       .json({ message: "An error occurred", error: error.message });
+//   }
+// };
 
 exports.getReviewById = async (req, res) => {
   const { reviewId } = req.params;
@@ -483,6 +483,26 @@ exports.getSuggestions = async (req, res) => {
       .json({ message: "An error occurred", error: error.message });
   }
 };
+
+exports.getProfilReviews = async (req, res) => {
+  const { search } = req.params;
+  const userId = req.user.user._id;
+  try {
+    let query = { user: userId };
+
+    if (search) {
+      query.name = new RegExp(search, "i");
+    }
+
+    const review = await Review.find(query);
+    res.status(200).json(review);
+  } catch (error) {
+    res
+      .status(400)
+      .json({ message: "An error occurred", error: error.message });
+  }
+};
+
 exports.rateReview = async (req, res) => {
   try {
     const { reviewId } = req.params;

@@ -14,7 +14,8 @@ getAllPendingReviews,
 rateReview,
 getGroupedReviews,
 editReview,
-updateGroupedReviewName
+updateGroupedReviewName,
+getProfilReviews
 } = require("../controllers/reviewController");
 const  {roleAuth}  = require("../middleware/auth");
 
@@ -24,18 +25,13 @@ router.delete("/:reviewId", roleAuth(["admin", "client"]), deleteReview);
 router.put("/:reviewId", roleAuth(["admin"]),editReview );
 router.put("/update/:reviewId", roleAuth(["admin"]),updateGroupedReviewName );
 router.put("/approve/:reviewId", roleAuth(["admin"]), approveReview);
-
-
-// Get operations (specific routes first)
-router.get("/", roleAuth(["admin"]), getAllPendingReviews);
-router.get("/:reviewId", roleAuth(["admin", "client"]), getReviewById);
-// router.get("/bad/:page", roleAuth(["admin", "client"]), getBadReviews);
-// router.get("/good/:page", roleAuth(["admin", "client"]), getGoodReviews);
-// router.get("/list/:page", roleAuth(["admin"]), getNonApprovedReviews);
 router.get("/grouped/:name", roleAuth(["admin", "client"]), getGroupedReviews);
+router.get("/profil/:search?", roleAuth(["admin", "client"]), getProfilReviews);
 router.get("/pending/:page/:search?", roleAuth(["admin", "client"]), getFiltredPendingReviews);
 router.get("/suggest/:filter/:search?", roleAuth(["admin", "client"]), getSuggestions);
+router.get("/:reviewId", roleAuth(["admin", "client"]), getReviewById);
 router.get("/:filter/:page/:search?", roleAuth(["admin", "client"]), getFiltredReviews);
+router.get("/", roleAuth(["admin"]), getAllPendingReviews);
 
 
 
