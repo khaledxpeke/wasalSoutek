@@ -545,18 +545,15 @@ exports.rateReview = async (req, res) => {
       name: new RegExp(`^${review.name}$`, "i"),
     });
     if (groupReviews.length > 1) {
-      console.log("test", groupReviews);
-      const groupTotalStars = groupReviews.reduce((acc, rev) => {
-        return acc + rev.ratings.reduce((acc2, rate) => acc2 + rate.stars, 0);
-      }, 0);
+      const groupTotalStars = groupReviews.reduce((acc, rev) => acc + rev.stars, 0);
+
 
       const groupTotalRatings = groupReviews.reduce(
         (acc, rev) => acc + rev.ratings.length,
         0
       );
 
-      const groupAverageStars =
-        groupTotalRatings > 0 ? groupTotalStars / groupTotalRatings : 0;
+      const groupAverageStars = groupTotalStars / groupReviews.length;
       res.status(200).json({
         message: "Rating updated successfully",
         groupedstars: groupAverageStars,
