@@ -227,6 +227,7 @@ exports.getFiltredReviews = async (req, res) => {
         ratingPercentage: { $sum: { $size: { $ifNull: ["$ratings", []] } } },
         createdAt: { $min: "$createdAt" },
         user: { $first: "$user.displayName" },
+        userId: { $first: "$user._id" },
         count: { $sum: 1 },
         originalName: { $first: "$name" },
         originalId: { $first: "$_id" },
@@ -525,7 +526,8 @@ exports.getProfilReviews = async (req, res) => {
               }
             },
             isNew: 1,
-            user: "$user._id",
+            user: "$user.displayName",
+            userId:"$user._id",
           },
         },
         {
