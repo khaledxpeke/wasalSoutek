@@ -9,7 +9,17 @@ const fs = require("fs");
 const Comment = require("../models/comment");
 const upload = multer({ storage: multerStorage }).array("images");
 const path = require("path");
-const  mongoose  = require("mongoose");
+const mongoose = require("mongoose");
+const User = require("../models/user");
+var admin = require("firebase-admin");
+// var fcm = require("fcm-notification");
+var serviceAccount = require("../config/push-notification-key.json");
+// const certPath = admin.credential.cert(serviceAccount);
+// var FCM = new fcm(certPath);
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+});
 
 exports.addReview = async (req, res, next) => {
   upload(req, res, async (err) => {
@@ -43,6 +53,7 @@ exports.addReview = async (req, res, next) => {
         images: images,
         user: req.user.user._id,
       });
+      await sendNotification(req.user.user._id, review.name);
       res.status(201).json({ reviews, message: "Review added successfully" });
     } catch (error) {
       if (error.code === 11000) {
@@ -56,6 +67,53 @@ exports.addReview = async (req, res, next) => {
   });
 };
 
+const sendNotification = async (userId, review) => {
+  try {
+    const admins = await User.find({
+      role: { $in: ["admin", "client"] },
+      fcmToken: { $ne: "" },
+    });
+    const tokens = admins.map((admin) => admin.fcmToken);
+    await sendNotificationToAdmin(userId, tokens, review);
+  } catch (error) {
+    console.error("Error in sendNotification:", error.message);
+  }
+};
+
+const sendNotificationToAdmin = async (userId, tokens, review) => {
+  try {
+    const client = await User.findOne({ _id: userId });
+
+    for (const token of tokens) {
+      try {
+        const sendNotificationPromise = (payload) => {
+          return new Promise((resolve, reject) => {
+            admin.messaging().send(payload, (err, response) => {
+              if (err) {
+                reject(err);
+              } else {
+                resolve(response);
+              }
+            });
+          });
+        };
+
+        const payload = {
+          notification: {
+            title: "Review",
+            body: `Le Client ${client.displayName}  a posté un avis ${review}`,
+          },
+          token: token,
+        };
+        await sendNotificationPromise(payload);
+      } catch (error) {
+        console.error("Error sending notification:", error);
+      }
+    }
+  } catch (error) {
+    console.error("Error in sendNotificationToChef:", error.message);
+  }
+};
 // exports.getNonApprovedReviews = async (req, res) => {
 //   try {
 //     const { page } = req.params;
@@ -489,65 +547,67 @@ exports.getSuggestions = async (req, res) => {
 
 exports.getProfilReviews = async (req, res) => {
   const userId = req.user.user._id;
-    try {
-      const userObjectId = new mongoose.Types.ObjectId(userId);
-      let matchQuery = { approved: true, user: userObjectId };
-      
-      const aggregationPipeline = [
-        { $match: matchQuery },
-  
-        {
-          $lookup: {
-            from: "users",
-            localField: "user",
-            foreignField: "_id",
-            as: "user",
-          },
-        },
-  
-        { $unwind: "$user" },
-  
-        {
-          $addFields: {
-            stars: { $round: ["$stars", 3] },
-            isNew: {
-              $gte: ["$createdAt", new Date(Date.now() - 24 * 60 * 60 * 1000)],
-            },
-          },
-        },
-        
-        {
-          $project: {
-            _id: 1,
-            name: 1,
-            stars: 1,
-            ratingPercentage: {
-              $size: {
-                $ifNull: ["$ratings", []]
-              }
-            },
-            isNew: 1,
-            user: "$user.displayName",
-            userId:"$user._id",
-          },
-        },
-        {
-          $sort: {
-            isNew: -1,
-            ratingPercentage: -1,
-            stars: -1,
-            createdAt: -1,
-          },
-        },
-      ];
+  try {
+    const userObjectId = new mongoose.Types.ObjectId(userId);
+    let matchQuery = { approved: true, user: userObjectId };
 
-      const reviews = await Review.aggregate(aggregationPipeline);
-  
-      res.status(200).json(reviews);
-    } catch (error) {
-      res.status(400).json({ message: "An error occurred", error: error.message });
-    }
-  };
+    const aggregationPipeline = [
+      { $match: matchQuery },
+
+      {
+        $lookup: {
+          from: "users",
+          localField: "user",
+          foreignField: "_id",
+          as: "user",
+        },
+      },
+
+      { $unwind: "$user" },
+
+      {
+        $addFields: {
+          stars: { $round: ["$stars", 3] },
+          isNew: {
+            $gte: ["$createdAt", new Date(Date.now() - 24 * 60 * 60 * 1000)],
+          },
+        },
+      },
+
+      {
+        $project: {
+          _id: 1,
+          name: 1,
+          stars: 1,
+          ratingPercentage: {
+            $size: {
+              $ifNull: ["$ratings", []],
+            },
+          },
+          isNew: 1,
+          user: "$user.displayName",
+          userId: "$user._id",
+        },
+      },
+      {
+        $sort: {
+          isNew: -1,
+          ratingPercentage: -1,
+          stars: -1,
+          createdAt: -1,
+        },
+      },
+    ];
+
+    const reviews = await Review.aggregate(aggregationPipeline);
+
+    res.status(200).json(reviews);
+  } catch (error) {
+    res
+      .status(400)
+      .json({ message: "An error occurred", error: error.message });
+  }
+};
 exports.rateReview = async (req, res) => {
   try {
     const { reviewId } = req.params;

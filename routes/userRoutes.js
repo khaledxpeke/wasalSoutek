@@ -7,7 +7,8 @@ const {
   getUserById,
   updateUser,
   deleteUser,
-  getClients
+  getClients,
+  logout
 } = require("../controllers/userController");
 const  {roleAuth}  = require("../middleware/auth");
 
@@ -17,6 +18,7 @@ router.get("/", roleAuth(["admin"]), getUsers);
 router.get("/client", roleAuth(["admin"]), getClients);
 router.get("/:userId", roleAuth(["admin","client"]), getUserById);
 router.put("/", roleAuth(["admin","client"]), updateUser);
+router.put("/token", roleAuth(["admin","client"]), logout);
 router.delete("/:userId", roleAuth(["admin"]), deleteUser);
 router.get('/auth/facebook', passport.authenticate('facebook'));
 router.get('/auth/facebook/callback',

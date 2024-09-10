@@ -68,7 +68,7 @@ exports.register = async (req, res) => {
 };
 
 exports.login = async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password,fcmToken } = req.body;
   try {
     const user = await User.findOne({ email });
     if (!user) {
@@ -79,6 +79,7 @@ exports.login = async (req, res) => {
     } else {
       bcrypt.compare(password, user.password).then(function (result) {
         if (result) {
+          user.fcmToken = fcmToken;
           const maxAgeInSeconds = 8 * 60 * 60 * 24 * 365; // 1 year in sec
           const maxAgeInMilliseconds = maxAgeInSeconds * 1000;
           const tokenPayload = {
@@ -200,4 +201,12 @@ exports.deleteUser = async (req, res) => {
     console.log(err.message);
     res.status(500).send("Server Error");
   }
+};
+
+exports.logout = async (req, res) => {
+  const userId = req.user.user._id;
+  const user = await User.findById(userId);
+  user.fcmToken = "";
+  await user.save();
+  res.status(200).json({ message: "token update successfully" });
 };

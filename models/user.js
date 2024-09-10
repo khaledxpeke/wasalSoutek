@@ -29,6 +29,7 @@ const UserSchema = new Mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  fcmToken: { type: String },
 });
 
 const User = Mongoose.model("User", UserSchema);
