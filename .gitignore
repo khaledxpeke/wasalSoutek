@@ -1,4 +1,4 @@
 node_modules/
 npm-debug.log
 *.env
-config/push-notification-key/
+config/push-notification-key.json/
