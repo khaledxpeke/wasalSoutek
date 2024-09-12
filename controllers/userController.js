@@ -77,9 +77,10 @@ exports.login = async (req, res) => {
         error: "Aucun utilisateur trouvée",
       });
     } else {
-      bcrypt.compare(password, user.password).then(function (result) {
+      bcrypt.compare(password, user.password).then(async function (result) {
         if (result) {
           user.fcmToken = fcmToken;
+          await user.save();
           const maxAgeInSeconds = 8 * 60 * 60 * 24 * 365; // 1 year in sec
           const maxAgeInMilliseconds = maxAgeInSeconds * 1000;
           const tokenPayload = {

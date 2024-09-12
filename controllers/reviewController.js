@@ -53,7 +53,7 @@ exports.addReview = async (req, res, next) => {
         images: images,
         user: req.user.user._id,
       });
-      await sendNotification(req.user.user._id, review.name);
+      await sendNotification(req.user.user._id, reviews.name);
       res.status(201).json({ reviews, message: "Review added successfully" });
     } catch (error) {
       if (error.code === 11000) {
@@ -70,7 +70,7 @@ exports.addReview = async (req, res, next) => {
 const sendNotification = async (userId, review) => {
   try {
     const admins = await User.find({
-      role: { $in: ["admin", "client"] },
+      role:"admin",
       fcmToken: { $ne: "" },
     });
     const tokens = admins.map((admin) => admin.fcmToken);
@@ -86,26 +86,21 @@ const sendNotificationToAdmin = async (userId, tokens, review) => {
 
     for (const token of tokens) {
       try {
-        const sendNotificationPromise = (payload) => {
-          return new Promise((resolve, reject) => {
-            admin.messaging().send(payload, (err, response) => {
-              if (err) {
-                reject(err);
-              } else {
-                resolve(response);
-              }
-            });
-          });
-        };
-
         const payload = {
           notification: {
             title: "Review",
-            body: `Le Client ${client.displayName}  a posté un avis ${review}`,
+            body: `Le Client ${client.displayName} a posté un avis ${review}`,
           },
-          token: token,
+          token: token, // Ensure this is the correct token for the FCM message
         };
-        await sendNotificationPromise(payload);
+
+        await admin.messaging().send(payload)
+        .then(response => {
+          console.log("Successfully sent message:", response);
+        })
+        .catch(error => {
+          console.log("Error sending message:", error);
+        });
       } catch (error) {
         console.error("Error sending notification:", error);
       }
@@ -158,6 +153,25 @@ exports.approveReview = async (req, res) => {
     review.approved = true;
     review.createdAt = Date.now();
     await review.save();
+    const user = await User.findById(review.user);
+
+    if (user && user.fcmToken) {
+      const message = {
+        notification: {
+          title: 'Review Approved',
+          body: 'Votre avis a été acceptées!',
+        },
+        token: user.fcmToken, 
+      };
+
+      admin.messaging().send(message)
+        .then((response) => {
+          console.log('Successfully sent message:', response);
+        })
+        .catch((error) => {
+          console.error('Error sending message:', error);
+        });
+    }
     res.status(200).json({ message: "Review approved successfully" });
   } catch (error) {
     res
