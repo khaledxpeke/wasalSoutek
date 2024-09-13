@@ -404,7 +404,7 @@ exports.getGroupedReviews = async (req, res) => {
 exports.getFiltredPendingReviews = async (req, res) => {
   const { page, search } = req.params;
   try {
-    const limit = 5;
+    const limit = 10;
     let matchQuery = {};
 
     matchQuery = { approved: false };
