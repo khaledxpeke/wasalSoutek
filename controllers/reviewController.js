@@ -12,10 +12,8 @@ const path = require("path");
 const mongoose = require("mongoose");
 const User = require("../models/user");
 var admin = require("firebase-admin");
-// var fcm = require("fcm-notification");
 var serviceAccount = require("../config/push-notification-key.json");
-// const certPath = admin.credential.cert(serviceAccount);
-// var FCM = new fcm(certPath);
+
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
@@ -29,7 +27,7 @@ exports.addReview = async (req, res, next) => {
     if (!req.files) {
       return res.status(400).json({
         message: "Ajouter une image",
-        error: "Please upload an image",
+        error: "Veuillez télécharger une image",
       });
     }
     const { name, link, review, message } = req.body;
@@ -54,14 +52,14 @@ exports.addReview = async (req, res, next) => {
         user: req.user.user._id,
       });
       await sendNotification(req.user.user._id, reviews.name);
-      res.status(201).json({ reviews, message: "Review added successfully" });
+      res.status(201).json({ reviews, message: "Avis ajouté avec succès" });
     } catch (error) {
       if (error.code === 11000) {
-        res.status(400).json({ message: "Review name must be unique." });
+        res.status(400).json({ message: "Le nom de l'avis doit être unique." });
       } else {
         res
           .status(400)
-          .json({ message: "An error occurred", error: error.message });
+          .json({ message: "Une erreur s'est produite", error: error.message });
       }
     }
   });
@@ -88,7 +86,7 @@ const sendNotificationToAdmin = async (userId, tokens, review) => {
       try {
         const payload = {
           notification: {
-            title: "Review",
+            title: "Avis",
             body: `Le Client ${client.displayName} a posté un avis ${review}`,
           },
           token: token, // Ensure this is the correct token for the FCM message
@@ -96,17 +94,17 @@ const sendNotificationToAdmin = async (userId, tokens, review) => {
 
         await admin.messaging().send(payload)
         .then(response => {
-          console.log("Successfully sent message:", response);
+          console.log("Message envoyé avec succès :", response);
         })
         .catch(error => {
-          console.log("Error sending message:", error);
+          console.log("Erreur lors de l'envoi du message : ", error);
         });
       } catch (error) {
-        console.error("Error sending notification:", error);
+        console.error("Erreur lors de l'envoi de la notification :", error);
       }
     }
   } catch (error) {
-    console.error("Error in sendNotificationToChef:", error.message);
+    console.error("Erreur lors sendNotificationToChef:", error.message);
   }
 };
 // exports.getNonApprovedReviews = async (req, res) => {
@@ -126,7 +124,7 @@ const sendNotificationToAdmin = async (userId, tokens, review) => {
 //   } catch (error) {
 //     res
 //       .status(400)
-//       .json({ message: "An error occurred", error: error.message });
+//       .json({ message: "Une erreur s'est produite", error: error.message });
 //   }
 // };
 
@@ -139,7 +137,7 @@ exports.getAllPendingReviews = async (req, res) => {
   } catch (error) {
     res
       .status(400)
-      .json({ message: "An error occurred", error: error.message });
+      .json({ message: "Une erreur s'est produite", error: error.message });
   }
 };
 
@@ -148,7 +146,7 @@ exports.approveReview = async (req, res) => {
   try {
     const review = await Review.findById(reviewId);
     if (!review) {
-      return res.status(404).json({ message: "Review not found" });
+      return res.status(404).json({ message: "Avis non trouvé" });
     }
     review.approved = true;
     review.createdAt = Date.now();
@@ -158,7 +156,7 @@ exports.approveReview = async (req, res) => {
     if (user && user.fcmToken) {
       const message = {
         notification: {
-          title: 'Review Approved',
+          title: 'Avis accepté',
           body: 'Votre avis a été acceptées!',
         },
         token: user.fcmToken, 
@@ -166,17 +164,17 @@ exports.approveReview = async (req, res) => {
 
       admin.messaging().send(message)
         .then((response) => {
-          console.log('Successfully sent message:', response);
+          console.log('Message envoyé avec succès :', response);
         })
         .catch((error) => {
-          console.error('Error sending message:', error);
+          console.error('Erreur lors de lenvoi du message :', error);
         });
     }
-    res.status(200).json({ message: "Review approved successfully" });
+    res.status(200).json({ message: "Avis acceptée avec succées" });
   } catch (error) {
     res
       .status(400)
-      .json({ message: "An error occurred", error: error.message });
+      .json({ message: "Une erreur s'est produite", error: error.message });
   }
 };
 
@@ -194,7 +192,7 @@ exports.approveReview = async (req, res) => {
 //   } catch (error) {
 //     res
 //       .status(400)
-//       .json({ message: "An error occurred", error: error.message });
+//       .json({ message: "Une erreur s'est produite", error: error.message });
 //   }
 // };
 
@@ -212,7 +210,7 @@ exports.approveReview = async (req, res) => {
 //   } catch (error) {
 //     res
 //       .status(400)
-//       .json({ message: "An error occurred", error: error.message });
+//       .json({ message: "Une erreur s'est produite", error: error.message });
 //   }
 // };
 
@@ -224,7 +222,7 @@ exports.getReviewById = async (req, res) => {
       .populate("user", "displayName image")
       .lean();
     if (!review) {
-      return res.status(404).json({ message: "Aucun Review trouvée" });
+      return res.status(404).json({ message: "Aucun Avis trouvée" });
     }
     const ratings = review.ratings || [];
     const userHasRated = ratings.some(
@@ -246,7 +244,7 @@ exports.getReviewById = async (req, res) => {
   } catch (error) {
     res
       .status(400)
-      .json({ message: "An error occurred", error: error.message });
+      .json({ message: "Une erreur s'est produite", error: error.message });
   }
 };
 
@@ -348,7 +346,7 @@ exports.getFiltredReviews = async (req, res) => {
   } catch (error) {
     res
       .status(400)
-      .json({ message: "An error occurred", error: error.message });
+      .json({ message: "Une erreur s'est produite", error: error.message });
   }
 };
 
@@ -399,7 +397,7 @@ exports.getGroupedReviews = async (req, res) => {
   } catch (error) {
     res
       .status(400)
-      .json({ message: "An error occurred", error: error.message });
+      .json({ message: "Une erreur s'est produite", error: error.message });
   }
 };
 
@@ -465,7 +463,7 @@ exports.getFiltredPendingReviews = async (req, res) => {
   } catch (error) {
     res
       .status(400)
-      .json({ message: "An error occurred", error: error.message });
+      .json({ message: "Une erreur s'est produite", error: error.message });
   }
 };
 exports.getSuggestions = async (req, res) => {
@@ -555,7 +553,7 @@ exports.getSuggestions = async (req, res) => {
   } catch (error) {
     res
       .status(400)
-      .json({ message: "An error occurred", error: error.message });
+      .json({ message: "Une erreur s'est produite", error: error.message });
   }
 };
 
@@ -619,7 +617,7 @@ exports.getProfilReviews = async (req, res) => {
   } catch (error) {
     res
       .status(400)
-      .json({ message: "An error occurred", error: error.message });
+      .json({ message: "Une erreur s'est produite", error: error.message });
   }
 };
 exports.rateReview = async (req, res) => {
@@ -630,7 +628,7 @@ exports.rateReview = async (req, res) => {
 
     const review = await Review.findById(reviewId);
     if (!review) {
-      return res.status(404).json({ message: "Review not found" });
+      return res.status(404).json({ message: "Avis non trouvé" });
     }
 
     const existingRating = review.ratings.find(
@@ -679,7 +677,7 @@ exports.rateReview = async (req, res) => {
       const roundedGroupAverageStars = parseFloat(groupAverageStars.toFixed(3));
       const roundedReviewStars = parseFloat(review.stars.toFixed(3));
       res.status(200).json({
-        message: "Rating updated successfully",
+        message: "Évaluation mise à jour avec succès",
         groupedstars: roundedGroupAverageStars,
         groupedratingPercentage: groupTotalRatings,
         stars: roundedReviewStars,
@@ -688,7 +686,7 @@ exports.rateReview = async (req, res) => {
     } else {
       const roundedReviewStars = parseFloat(review.stars.toFixed(3));
       res.status(200).json({
-        message: "Rating updated successfully",
+        message: "Évaluation mise à jour avec succès",
         stars: roundedReviewStars,
         ratingPercentage: review.ratings.length,
       });
@@ -696,7 +694,7 @@ exports.rateReview = async (req, res) => {
   } catch (error) {
     res
       .status(400)
-      .json({ message: "An error occurred", error: error.message });
+      .json({ message: "Une erreur s'est produite", error: error.message });
   }
 };
 exports.deleteReview = async (req, res) => {
@@ -705,7 +703,7 @@ exports.deleteReview = async (req, res) => {
   try {
     const review = await Review.findById(reviewId);
     if (!review) {
-      return res.status(404).json({ message: "Review not found" });
+      return res.status(404).json({ message: "Avis non trouvé" });
     }
     if (review.images) {
       review.images.forEach((image) => {
@@ -717,16 +715,16 @@ exports.deleteReview = async (req, res) => {
     }
     if (userRole == "client") {
       if (review.user.toString() !== req.user.user._id) {
-        return res.status(401).json({ message: "you dont own the post" });
+        return res.status(401).json({ message: "tu n'es pas propriétaire du post" });
       }
     }
     await Review.findByIdAndDelete(reviewId);
     const comments = await Comment.deleteMany({ review: reviewId });
-    res.status(200).json({ message: "Review deleted successfully" });
+    res.status(200).json({ message: "Avis supprimé avec succès" });
   } catch (error) {
     res
       .status(400)
-      .json({ message: "An error occurred", error: error.message });
+      .json({ message: "Une erreur s'est produite", error: error.message });
   }
 };
 
@@ -741,10 +739,10 @@ exports.editReview = async (req, res) => {
       try {
         removeImages = JSON.parse(removeImages);
       } catch (parseError) {
-        console.error("Failed to parse removeImages:", parseError);
+        console.error("Échec de l'analyse de removeImages :", parseError);
         return res
           .status(400)
-          .json({ message: "Invalid format for removeImages." });
+          .json({ message: "Format non valide pour removeImages." });
       }
     }
 
@@ -752,7 +750,7 @@ exports.editReview = async (req, res) => {
       const review = await Review.findById(reviewId);
 
       if (!review) {
-        return res.status(404).json({ message: "No review found." });
+        return res.status(404).json({ message: "Aucun avis trouvé." });
       }
       const imageDir = path.join(__dirname, "..", "uploads");
       if (Array.isArray(removeImages) && removeImages.length > 0) {
@@ -763,10 +761,10 @@ exports.editReview = async (req, res) => {
               try {
                 fs.unlinkSync(imagePath);
               } catch (unlinkError) {
-                console.error("Failed to remove image file:", unlinkError);
+                console.error("Échec de la suppression du fichier image :", unlinkError);
               }
             } else {
-              console.warn(`Image file not found: ${imagePath}`);
+              console.warn(`Fichier image non trouvé: ${imagePath}`);
             }
             review.images = review.images.filter((img) => img !== imageName);
           }
@@ -787,7 +785,7 @@ exports.editReview = async (req, res) => {
     } catch (error) {
       res
         .status(400)
-        .json({ message: "An error occurred", error: error.message });
+        .json({ message: "Une erreur s'est produite", error: error.message });
     }
   });
 };
@@ -803,7 +801,7 @@ exports.updateGroupedReviewName = async (req, res) => {
       name: new RegExp(`^${normalizedCurrentName}$`, "i"),
     });
     if (reviews.length === 0) {
-      return res.status(404).json({ message: "Aucun review trouvée." });
+      return res.status(404).json({ message: "Aucun avis trouvé." });
     }
 
     await Review.updateMany(
@@ -811,10 +809,10 @@ exports.updateGroupedReviewName = async (req, res) => {
       { $set: { name: normalizedNewName } }
     );
 
-    res.status(200).json({ message: "reviews groupée modifiée avec succées." });
+    res.status(200).json({ message: "Avis groupée modifiée avec succées." });
   } catch (error) {
     res
       .status(400)
-      .json({ message: "An error occurred", error: error.message });
+      .json({ message: "Une erreur s'est produite", error: error.message });
   }
 };

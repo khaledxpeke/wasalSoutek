@@ -20,7 +20,7 @@ exports.addComment = async (req, res) => {
   } catch (error) {
     res
       .status(400)
-      .json({ message: "An error occurred", error: error.message });
+      .json({ message: "Une erreur s'est produite", error: error.message });
   }
 };
 
@@ -37,7 +37,7 @@ exports.getComments = async (req, res) => {
   } catch (error) {
     res
       .status(400)
-      .json({ message: "An error occurred", error: error.message });
+      .json({ message: "Une erreur s'est produite", error: error.message });
   }
 };
 
@@ -48,7 +48,7 @@ exports.deleteComment = async (req, res) => {
     if (userRole == "client") {
       const comment = await Comment.findById(commentId);
       if (comment.user.toString() !== req.user.user._id.toString()) {
-        return res.status(403).json({ message: "Not authorized" });
+        return res.status(403).json({ message: "Non autorisé" });
       } else {
         await Comment.findByIdAndDelete(commentId);
       }
@@ -56,10 +56,10 @@ exports.deleteComment = async (req, res) => {
       await Comment.findByIdAndDelete(commentId);
     }
 
-    res.status(200).json({ message: "Comment deleted successfully" });
+    res.status(200).json({ message: "Commentaire supprimé avec succès" });
   } catch (error) {
     res
       .status(400)
-      .json({ message: "An error occurred", error: error.message });
+      .json({ message: "Une erreur s'est produite", error: error.message });
   }
 };
