@@ -26,7 +26,7 @@ exports.addComment = async (req, res) => {
 
 exports.getComments = async (req, res) => {
   const { reviewId, page } = req.params;
-  const limit = 10;
+  const limit = 30;
   try {
     const comments = await Comment.find({ review: reviewId })
       .populate("user", "displayName image")
