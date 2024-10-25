@@ -16,7 +16,7 @@ exports.register = async (req, res) => {
   upload.single("image")(req, res, async (err) => {
     if (err) {
       return res.status(400).json({
-        message: "Image upload failed",
+        message: "Le téléchargement de l'image a échoué",
         error: err.message,
       });
     }
@@ -53,14 +53,14 @@ exports.register = async (req, res) => {
           })
           .catch((error) =>
             res.status(400).json({
-              message: "This name already exists",
+              message: "Ce nom existe déjà",
               error: error.message,
             })
           );
       });
     } catch (error) {
       res.status(400).json({
-        message: "An error occurred",
+        message: "Une erreur s'est produite",
         error: error.message,
       });
     }
@@ -105,7 +105,7 @@ exports.login = async (req, res) => {
     }
   } catch (error) {
     res.status(400).json({
-      message: "An error occurred",
+      message: "Une erreur s'est produite",
       error: error.message,
     });
   }
@@ -170,7 +170,7 @@ exports.updateUser = async (req, res) => {
     try {
       let user = await User.findById(userId);
       if (!user) {
-        return res.status(404).json({ message: "User not found" });
+        return res.status(404).json({ message: "Utilisateur non trouvé" });
       }
       user.displayName = displayName;
 
@@ -209,5 +209,5 @@ exports.logout = async (req, res) => {
   const user = await User.findById(userId);
   user.fcmToken = "";
   await user.save();
-  res.status(200).json({ message: "token update successfully" });
+  res.status(200).json({ message: "mise à jour du token réussie" });
 };
