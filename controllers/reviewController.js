@@ -595,7 +595,8 @@ exports.getProfilReviews = async (req, res) => {
 
       {
         $group: {
-          _id: "$name", 
+          _id: "$_id", 
+          name: { $first: "$name" }, 
           stars: { $avg: { $ifNull: ["$stars", 0] } },
           createdAt: { $min: "$createdAt" },
           user: { $first: "$user.displayName" },
@@ -621,8 +622,8 @@ exports.getProfilReviews = async (req, res) => {
 
       {
         $project: {
-          _id: 1,
-          name: "$_id", 
+          _id: "$_id",
+          name: 1, 
           stars: 1,
           ratingPercentage: 1,
           isNew: 1,
