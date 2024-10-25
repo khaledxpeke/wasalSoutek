@@ -737,7 +737,7 @@ exports.editReview = async (req, res) => {
       return res.status(400).json({ message: err.message });
     }
     const { reviewId } = req.params;
-    let { removeImages = "[]", ...updates } = req.body;
+    let {  removeImages = "[]", ...updates} = req.body;
     if (typeof removeImages === "string") {
       try {
         removeImages = JSON.parse(removeImages);
@@ -781,7 +781,7 @@ exports.editReview = async (req, res) => {
       }
 
       Object.assign(review, updates);
-
+      
       const updatedReview = await review.save();
 
       res.status(200).json(updatedReview);
