@@ -656,78 +656,44 @@ exports.getProfilReviews = async (req, res) => {
 exports.rateReview = async (req, res) => {
   try {
     const { reviewId } = req.params;
-    const { stars } = req.body;
+    const { stars } = req.body; 
     const userId = req.user.user._id;
+
+
+    if (stars < 1 || stars > 5) {
+      return res.status(400).json({ message: "La note doit être comprise entre 1 et 5." });
+    }
 
     const review = await Review.findById(reviewId);
     if (!review) {
       return res.status(404).json({ message: "Avis non trouvé" });
     }
 
-    const existingRating = review.ratings.find(
-      (r) => r.user.toString() === userId.toString()
-    );
-
-    if (existingRating) {
-      if (stars === 0) {
-        review.ratings = review.ratings.filter(
-          (r) => r.user.toString() !== userId.toString()
-        );
-      } else {
-        existingRating.stars = stars;
-      }
-    } else {
-      if (stars !== 0) {
-        review.ratings.push({ user: userId, stars });
-      }
-    }
-
-    const totalStars = review.ratings.reduce(
-      (acc, rate) => acc + rate.stars,
-      0
-    );
-    review.stars =
-      review.ratings.length > 0 ? totalStars / review.ratings.length : 0;
-
-    await review.save();
+    review.stars = stars;
 
     const groupReviews = await Review.find({
       name: new RegExp(`^${review.name}$`, "i"),
     });
-    if (groupReviews.length > 1) {
-      const groupTotalStars = groupReviews.reduce(
-        (acc, rev) => acc + rev.stars,
-        0
-      );
 
-      const groupTotalRatings = groupReviews.reduce(
-        (acc, rev) => acc + rev.ratings.length,
-        0
-      );
+    const totalStars = groupReviews.reduce((acc, rev) => acc + rev.stars, 0);
+    const totalRatings = groupReviews.length;
 
-      const groupAverageStars = groupTotalStars / groupReviews.length;
+    const averageStars = totalRatings > 0 ? totalStars / totalRatings : 0;
 
-      const roundedGroupAverageStars = parseFloat(groupAverageStars.toFixed(3));
-      const roundedReviewStars = parseFloat(review.stars.toFixed(3));
-      res.status(200).json({
-        message: "Évaluation mise à jour avec succès",
-        groupedstars: roundedGroupAverageStars,
-        groupedratingPercentage: groupTotalRatings,
-        stars: roundedReviewStars,
-        ratingPercentage: review.ratings.length,
-      });
-    } else {
-      const roundedReviewStars = parseFloat(review.stars.toFixed(3));
-      res.status(200).json({
-        message: "Évaluation mise à jour avec succès",
-        stars: roundedReviewStars,
-        ratingPercentage: review.ratings.length,
-      });
-    }
+
+    await review.save();
+
+    const roundedAverageStars = parseFloat(averageStars.toFixed(3));
+    const roundedReviewStars = parseFloat(review.stars.toFixed(3));
+
+    res.status(200).json({
+      message: "Évaluation mise à jour avec succès",
+      stars: roundedReviewStars,
+      ratingPercentage: groupReviews.length, 
+      groupedStars: roundedAverageStars,
+    });
   } catch (error) {
-    res
-      .status(400)
-      .json({ message: "Une erreur s'est produite", error: error.message });
+    res.status(400).json({ message: "Une erreur s'est produite", error: error.message });
   }
 };
 exports.deleteReview = async (req, res) => {
