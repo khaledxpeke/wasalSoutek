@@ -52,7 +52,7 @@ exports.addReview = async (req, res, next) => {
         images: images,
         user: req.user.user._id,
       });
-      // await sendNotification(req.user.user._id, reviews.name);
+      await sendNotification(req.user.user._id, reviews.name);
       res.status(201).json({ reviews, message: "Avis ajouté avec succès" });
     } catch (error) {
       if (error.code === 11000) {
@@ -163,13 +163,13 @@ exports.approveReview = async (req, res) => {
         token: user.fcmToken, 
       };
 
-      // admin.messaging().send(message)
-      //   .then((response) => {
-      //     console.log('Message envoyé avec succès :', response);
-      //   })
-      //   .catch((error) => {
-      //     console.error('Erreur lors de lenvoi du message :', error);
-      //   });
+      admin.messaging().send(message)
+        .then((response) => {
+          console.log('Message envoyé avec succès :', response);
+        })
+        .catch((error) => {
+          console.error('Erreur lors de lenvoi du message :', error);
+        });
     }
     res.status(200).json({ message: "Avis acceptée avec succées" });
   } catch (error) {
