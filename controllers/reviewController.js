@@ -780,10 +780,15 @@ exports.editReview = async (req, res) => {
     }
 
     try {
-      const review = await Review.findById(reviewId);
+      const review = await Review.findById(reviewId).populate('user');
 
       if (!review) {
         return res.status(404).json({ message: "Aucun avis trouvé." });
+      }
+      const isAdmin = req.user.user._role === 'admin'; 
+      const isOwner = review.user._id.equals(req.user.user._id);
+      if (!isAdmin && !isOwner) {
+        return res.status(403).json({ message: "Vous n'avez pas l'autorisation de modifier cet avis." });
       }
       const imageDir = path.join(__dirname, "..", "uploads");
       if (Array.isArray(removeImages) && removeImages.length > 0) {
