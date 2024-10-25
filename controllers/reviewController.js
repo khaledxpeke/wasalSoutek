@@ -668,6 +668,11 @@ exports.rateReview = async (req, res) => {
     if (!review) {
       return res.status(404).json({ message: "Avis non trouvé" });
     }
+    const isOwner = review.user.toString() === userId.toString();
+
+    if (!isOwner) {
+      return res.status(403).json({ message: "Vous n'êtes pas autorisé à modifier cette évaluation." });
+    }
 
     review.stars = stars;
 
