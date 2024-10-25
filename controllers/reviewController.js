@@ -30,7 +30,7 @@ exports.addReview = async (req, res, next) => {
         error: "Veuillez télécharger une image",
       });
     }
-    const { name, link, review, message } = req.body;
+    const { name, link, review, message,stars } = req.body;
     const images = req.files.map((file) => file.filename);
     const userRole = req.user.user.role;
     let approved = false;
@@ -48,6 +48,7 @@ exports.addReview = async (req, res, next) => {
         review,
         message,
         approved,
+        stars,
         images: images,
         user: req.user.user._id,
       });
@@ -294,7 +295,7 @@ exports.getFiltredReviews = async (req, res) => {
       $group: {
         _id: "$normalizedName",
         stars: { $avg: { $ifNull: ["$stars", 0] } },
-        ratingPercentage: { $sum: { $size: { $ifNull: ["$ratings", []] } } },
+        // ratingPercentage: { $sum: { $size: { $ifNull: ["$ratings", []] } } },
         createdAt: { $min: "$createdAt" },
         user: { $first: "$user.displayName" },
         userId: { $first: "$user._id" },
@@ -320,7 +321,7 @@ exports.getFiltredReviews = async (req, res) => {
       $sort: {
         isNew: -1,
         grouped: -1,
-        ratingPercentage: -1,
+        // ratingPercentage: -1,
         stars: -1,
         createdAt: -1,
       },
@@ -333,7 +334,7 @@ exports.getFiltredReviews = async (req, res) => {
         _id: "$originalId",
         name: "$originalName",
         stars: 1,
-        ratingPercentage: 1,
+        // ratingPercentage: 1,
         isNew: 1,
         grouped: 1,
         user: 1,
