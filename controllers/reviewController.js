@@ -453,7 +453,7 @@ exports.getFiltredPendingReviews = async (req, res) => {
         images: 1,
         review: 1,
         message: 1,
-        rating: 1,
+        // rating: 1,
         stars: 1,
         createdAt: 1,
         user: { displayName: "$user.displayName", image: "$user.image" },
@@ -597,20 +597,43 @@ exports.getProfilReviews = async (req, res) => {
       },
 
       {
-        $project: {
-          _id: 1,
-          name: 1,
-          stars: 1,
-          ratingPercentage: {
-            $size: {
-              $ifNull: ["$ratings", []],
-            },
-          },
-          isNew: 1,
-          user: "$user.displayName",
-          userId: "$user._id",
+        $group: {
+          _id: "$name", 
+          stars: { $avg: { $ifNull: ["$stars", 0] } },
+          createdAt: { $min: "$createdAt" },
+          user: { $first: "$user.displayName" },
+          userId: { $first: "$user._id" },
+          count: { $sum: 1 },
         },
       },
+
+      {
+        $addFields: {
+          ratingPercentage: {
+            $cond: {
+              if: { $gt: ["$count", 1] }, 
+              then: "$count", 
+              else: "$$REMOVE", 
+            },
+          },
+          isNew: {
+            $gte: ["$createdAt", new Date(Date.now() - 24 * 60 * 60 * 1000)],
+          },
+        },
+      },
+
+      {
+        $project: {
+          _id: 1,
+          name: "$_id", 
+          stars: 1,
+          ratingPercentage: 1,
+          isNew: 1,
+          user: 1,
+          userId: 1,
+        },
+      },
+
       {
         $sort: {
           isNew: -1,
