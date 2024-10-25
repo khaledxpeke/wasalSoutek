@@ -225,21 +225,18 @@ exports.getReviewById = async (req, res) => {
     if (!review) {
       return res.status(404).json({ message: "Aucun Avis trouvée" });
     }
-    const ratings = review.ratings || [];
-    const userHasRated = ratings.some(
-      (rating) => rating.user.toString() === userId.toString()
-    );
-    const userStars = userHasRated
-      ? ratings.find((rating) => rating.user.toString() === userId.toString())
-          .stars
-      : 0;
-    const { ratings: _, ...reviewWithoutRatings } = review;
+    // const ratings = review.ratings || [];
+    // const userHasRated = ratings.some(
+    //   (rating) => rating.user.toString() === userId.toString()
+    // );
+    const userStars = review.stars;
+    // const { ratings: _, ...reviewWithoutRatings } = review;
 
-    const ratePercentage = ratings.length || 0;
+    // const ratePercentage = ratings.length || 0;
     res.status(200).json({
-      data: reviewWithoutRatings,
-      ratePercentage,
-      userHasRated,
+      data: review,
+      // ratePercentage,
+      // userHasRated,
       userStars,
     });
   } catch (error) {
