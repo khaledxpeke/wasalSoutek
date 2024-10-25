@@ -36,19 +36,19 @@ const ReviewSchema = new Mongoose.Schema({
     min: 0,
     max: 5,
   },
-  ratings: [
-    {
-      user: {
-        type: Mongoose.Schema.Types.ObjectId,
-        ref: "User",
-        required: true,
-      },
-      stars: {
-        type: Number,
-        required: true,
-      },
-    },
-  ],
+  // ratings: [
+  //   {
+  //     user: {
+  //       type: Mongoose.Schema.Types.ObjectId,
+  //       ref: "User",
+  //       required: true,
+  //     },
+  //     stars: {
+  //       type: Number,
+  //       required: true,
+  //     },
+  //   },
+  // ],
   createdAt: {
     type: Date,
     default: Date.now,
