@@ -295,7 +295,7 @@ exports.getFiltredReviews = async (req, res) => {
       $group: {
         _id: "$normalizedName",
         stars: { $avg: { $ifNull: ["$stars", 0] } },
-        // ratingPercentage: { $sum: { $size: { $ifNull: ["$ratings", []] } } },
+        ratingPercentage: { $sum: { $size: { $ifNull: ["$ratings", []] } } },
         createdAt: { $min: "$createdAt" },
         user: { $first: "$user.displayName" },
         userId: { $first: "$user._id" },
@@ -321,7 +321,7 @@ exports.getFiltredReviews = async (req, res) => {
       $sort: {
         isNew: -1,
         grouped: -1,
-        // ratingPercentage: -1,
+        ratingPercentage: -1,
         stars: -1,
         createdAt: -1,
       },
@@ -334,7 +334,9 @@ exports.getFiltredReviews = async (req, res) => {
         _id: "$originalId",
         name: "$originalName",
         stars: 1,
-        // ratingPercentage: 1,
+        ratingPercentage: {
+          $cond: { if: { $eq: ["$grouped", true] }, then: "$ratingPercentage", else: null }
+        },
         isNew: 1,
         grouped: 1,
         user: 1,
