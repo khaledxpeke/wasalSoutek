@@ -672,6 +672,7 @@ exports.rateReview = async (req, res) => {
     }
 
     review.stars = stars;
+    await review.save();
 
     const groupReviews = await Review.find({
       name: new RegExp(`^${review.name}$`, "i"),
