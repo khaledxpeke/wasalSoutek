@@ -295,7 +295,7 @@ exports.getFiltredReviews = async (req, res) => {
       $group: {
         _id: "$normalizedName",
         stars: { $avg: { $ifNull: ["$stars", 0] } },
-        ratingPercentage: { $sum: { $size: { $ifNull: ["$ratings", []] } } },
+        // ratingPercentage: { $sum: { $size: { $ifNull: ["$ratings", []] } } },
         createdAt: { $min: "$createdAt" },
         user: { $first: "$user.displayName" },
         userId: { $first: "$user._id" },
@@ -310,6 +310,13 @@ exports.getFiltredReviews = async (req, res) => {
         stars: { $round: ["$stars", 3] },
         grouped: {
           $cond: { if: { $gt: ["$count", 1] }, then: true, else: false },
+        },
+        ratingPercentage: {
+          $cond: {
+            if: { $gt: ["$count", 1] }, 
+            then: "$count", 
+            else: "$$REMOVE",
+          },
         },
         isNew: {
           $gte: ["$createdAt", new Date(Date.now() - 24 * 60 * 60 * 1000)],
@@ -335,7 +342,7 @@ exports.getFiltredReviews = async (req, res) => {
         name: "$originalName",
         stars: 1,
         ratingPercentage: {
-          $cond: { if: { $eq: ["$grouped", true] }, then: "$ratingPercentage", else: null }
+          $cond: { if: { $eq: ["$grouped", true] }, then: "$ratingPercentage", else: "$$REMOVE" }
         },
         isNew: 1,
         grouped: 1,
@@ -781,7 +788,7 @@ exports.editReview = async (req, res) => {
       }
 
       Object.assign(review, updates);
-      
+
       const updatedReview = await review.save();
 
       res.status(200).json(updatedReview);
