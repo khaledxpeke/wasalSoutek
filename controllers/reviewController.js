@@ -372,6 +372,7 @@ exports.getGroupedReviews = async (req, res) => {
     aggregationPipeline.push({
       $match: {
         normalizedName: normalizedQueryName,
+        approved: true,
       },
     });
     aggregationPipeline.push({
