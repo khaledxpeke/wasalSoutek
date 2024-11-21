@@ -661,6 +661,7 @@ exports.getProfilReviews = async (req, res) => {
           user: { $first: "$user.displayName" },
           userId: { $first: "$user._id" },
           count: { $sum: 1 },
+          message: { $first: "$message" },
         },
       },
 
@@ -688,6 +689,7 @@ exports.getProfilReviews = async (req, res) => {
           isNew: 1,
           user: 1,
           userId: 1,
+          message: 1,
         },
       },
 

@@ -32,7 +32,6 @@ exports.getComments = async (req, res) => {
   const limit = 30;
   try {
     const review = await Review.findById(reviewId).populate("user");
-    let displayName = review.user.displayName;
     const comments = await Comment.find({ review: reviewId })
       .populate("user", "displayName image")
       .skip((page - 1) * limit)
@@ -43,12 +42,22 @@ exports.getComments = async (req, res) => {
         let commentImage = comment.user.image; 
   
   
-        if (
-          (comment.user.anonyme && userId.toString() !== comment.user._id.toString()) || 
-          (userRole !== "admin" && comment.user.anonyme)
-        ) {
-          commentDisplayName = "Anonyme"; 
-          commentImage = "uploads\\anonyme.png"; 
+        if (review.anonyme) {
+          if (
+            (userId.toString() !== review.user._id.toString()) && 
+            (userRole !== "admin") && 
+            (review.user._id.toString() == comment.user._id.toString()) 
+          ) {
+            commentDisplayName = "Anonyme"; 
+            commentImage = "uploads\\anonyme.png"; 
+          }
+  
+          // // For the owner of the review, anonymize the display name for clients and admins
+          // if (userId.toString() === review.user._id.toString()) {
+          //   commentDisplayName = "Anonyme"; // If the owner posted a comment
+          //   commentImage = "uploads\\anonyme.png"; 
+          // }
+          
         }
   
         return {
