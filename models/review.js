@@ -36,6 +36,10 @@ const ReviewSchema = new Mongoose.Schema({
     min: 0,
     max: 5,
   },
+  anonyme: {
+    type: Boolean,
+    default: false,
+  },
   // ratings: [
   //   {
   //     user: {

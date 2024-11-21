@@ -30,7 +30,7 @@ exports.addReview = async (req, res, next) => {
         error: "Veuillez télécharger une image",
       });
     }
-    const { name, link, review, message,stars } = req.body;
+    const { name, link, review, message,stars ,anonyme} = req.body;
     const images = req.files.map((file) => file.filename);
     const userRole = req.user.user.role;
     let approved = false;
@@ -50,6 +50,7 @@ exports.addReview = async (req, res, next) => {
         approved,
         stars,
         images: images,
+        anonyme,
         user: req.user.user._id,
       });
       await sendNotification(req.user.user._id, reviews.name);
@@ -257,6 +258,9 @@ exports.getFiltredReviews = async (req, res) => {
     } else if (filter === "negative") {
       matchQuery = { approved: true, review: false };
     }
+    else if (filter === "all") {
+      matchQuery = { approved: true };
+    }
 
     const aggregationPipeline = [];
 
@@ -286,6 +290,13 @@ exports.getFiltredReviews = async (req, res) => {
     aggregationPipeline.push({
       $addFields: {
         normalizedName: { $toLower: "$name" },
+        userDisplayName: {
+          $cond: {
+            if: "$anonyme",
+            then: "Anonyme",
+            else: "$user.displayName",
+          },
+        },
       },
     });
     aggregationPipeline.push({
@@ -294,11 +305,12 @@ exports.getFiltredReviews = async (req, res) => {
         stars: { $avg: { $ifNull: ["$stars", 0] } },
         // ratingPercentage: { $sum: { $size: { $ifNull: ["$ratings", []] } } },
         createdAt: { $min: "$createdAt" },
-        user: { $first: "$user.displayName" },
+        user: { $first: "$userDisplayName" },
         userId: { $first: "$user._id" },
         count: { $sum: 1 },
         originalName: { $first: "$name" },
         originalId: { $first: "$_id" },
+        anonyme: { $first: "$anonyme" },
       },
     });
 
@@ -345,6 +357,7 @@ exports.getFiltredReviews = async (req, res) => {
         grouped: 1,
         user: 1,
         userId: 1,
+        anonyme: 1,
       },
     });
     const reviews = await Review.aggregate(aggregationPipeline);
