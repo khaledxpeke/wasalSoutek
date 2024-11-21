@@ -250,6 +250,7 @@ exports.getReviewById = async (req, res) => {
       data: {
         ...review,
         user: {
+          _id: review.user._id,
           displayName,
           image: image,
         },
