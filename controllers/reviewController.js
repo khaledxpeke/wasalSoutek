@@ -310,21 +310,21 @@ exports.getFiltredReviews = async (req, res) => {
     aggregationPipeline.push({
       $addFields: {
         normalizedName: { $toLower: "$name" },
-        userDisplayName: {
-          $cond: {
-            if: {
-              $and: [
-                { $eq: ["$anonyme", true] },
-                {
-                  $ne: [{ $toString: "$user._id" }, { $toString: userId }],
-                },
-                { $ne: [userRole, "admin"] },
-              ],
-            },
-            then: "Anonyme",
-            else: "$user.displayName",
-          },
-        },
+        // userDisplayName: {
+        //   $cond: {
+        //     if: {
+        //       $and: [
+        //         { $eq: ["$anonyme", true] },
+        //         {
+        //           $ne: [{ $toString: "$user._id" }, { $toString: userId }],
+        //         },
+        //         { $ne: [userRole, "admin"] },
+        //       ],
+        //     },
+        //     then: "Anonyme",
+        //     else: "$user.displayName",
+        //   },
+        // },
       },
     });
     aggregationPipeline.push({
@@ -333,7 +333,7 @@ exports.getFiltredReviews = async (req, res) => {
         stars: { $avg: { $ifNull: ["$stars", 0] } },
         // ratingPercentage: { $sum: { $size: { $ifNull: ["$ratings", []] } } },
         createdAt: { $min: "$createdAt" },
-        user: { $first: "$userDisplayName" },
+        user: { $first: "$user.displayName" },
         userId: { $first: "$user._id" },
         count: { $sum: 1 },
         originalName: { $first: "$name" },
@@ -406,6 +406,8 @@ exports.getFiltredReviews = async (req, res) => {
 
 exports.getGroupedReviews = async (req, res) => {
   const { name } = req.params;
+  const userId = req.user.user._id;
+  const userRole = req.user.user.role;
   try {
     const aggregationPipeline = [];
 
@@ -443,7 +445,19 @@ exports.getGroupedReviews = async (req, res) => {
         stars: 1,
         message: 1,
         ratingPercentage: { $size: { $ifNull: ["$ratings", []] } },
-        user: "$user.displayName",
+        user: {
+          $cond: {
+            if: {
+              $and: [
+                { $eq: ["$anonyme", true] }, 
+                { $ne: [{ $toString: "$user._id" }, { $toString: userId }] }, 
+                { $ne: [userRole, "admin"] }, 
+              ],
+            },
+            then: "Anonyme", 
+            else: "$user.displayName", 
+          },
+        },
       },
     });
 
