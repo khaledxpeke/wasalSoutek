@@ -14,7 +14,6 @@ const User = require("../models/user");
 var admin = require("firebase-admin");
 var serviceAccount = require("../config/push-notification-key.json");
 
-
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
@@ -30,7 +29,7 @@ exports.addReview = async (req, res, next) => {
         error: "Veuillez télécharger une image",
       });
     }
-    const { name, link, review, message,stars ,anonyme} = req.body;
+    const { name, link, review, message, stars, anonyme } = req.body;
     const images = req.files.map((file) => file.filename);
     const userRole = req.user.user.role;
     let approved = false;
@@ -70,7 +69,7 @@ exports.addReview = async (req, res, next) => {
 const sendNotification = async (userId, review) => {
   try {
     const admins = await User.find({
-      role:"admin",
+      role: "admin",
       fcmToken: { $ne: "" },
     });
     const tokens = admins.map((admin) => admin.fcmToken);
@@ -94,13 +93,15 @@ const sendNotificationToAdmin = async (userId, tokens, review) => {
           token: token, // Ensure this is the correct token for the FCM message
         };
 
-        await admin.messaging().send(payload)
-        .then(response => {
-          console.log("Message envoyé avec succès :", response);
-        })
-        .catch(error => {
-          console.log("Erreur lors de l'envoi du message : ", error);
-        });
+        await admin
+          .messaging()
+          .send(payload)
+          .then((response) => {
+            console.log("Message envoyé avec succès :", response);
+          })
+          .catch((error) => {
+            console.log("Erreur lors de l'envoi du message : ", error);
+          });
       } catch (error) {
         console.error("Erreur lors de l'envoi de la notification :", error);
       }
@@ -158,18 +159,20 @@ exports.approveReview = async (req, res) => {
     if (user && user.fcmToken) {
       const message = {
         notification: {
-          title: 'Avis accepté',
-          body: 'Votre avis a été acceptées!',
+          title: "Avis accepté",
+          body: "Votre avis a été acceptées!",
         },
-        token: user.fcmToken, 
+        token: user.fcmToken,
       };
 
-      admin.messaging().send(message)
+      admin
+        .messaging()
+        .send(message)
         .then((response) => {
-          console.log('Message envoyé avec succès :', response);
+          console.log("Message envoyé avec succès :", response);
         })
         .catch((error) => {
-          console.error('Erreur lors de lenvoi du message :', error);
+          console.error("Erreur lors de lenvoi du message :", error);
         });
     }
     res.status(200).json({ message: "Avis acceptée avec succées" });
@@ -253,13 +256,13 @@ exports.getFiltredReviews = async (req, res) => {
     const limit = 20;
     let matchQuery = {};
     const userId = req.user.user._id;
+    const userRole = req.user.user.role;
 
     if (filter === "positive") {
       matchQuery = { approved: true, review: true };
     } else if (filter === "negative") {
       matchQuery = { approved: true, review: false };
-    }
-    else if (filter === "all") {
+    } else if (filter === "all") {
       matchQuery = { approved: true };
     }
 
@@ -292,7 +295,24 @@ exports.getFiltredReviews = async (req, res) => {
         normalizedName: { $toLower: "$name" },
         userDisplayName: {
           $cond: {
-            if: { $and: [{ $eq: ["$anonyme", true] }, { $ne: [{ $toString: "$user._id" }, { $toString: userId }] }] },
+            if: {
+              $or: [
+                {
+                  $and: [
+                    { $eq: ["$anonyme", true] },
+                    {
+                      $ne: [{ $toString: "$user._id" }, { $toString: userId }],
+                    },
+                  ],
+                },
+                {
+                  $and: [
+                    { $ne: [userRole, "admin"] },
+                    { $eq: ["$anonyme", true] },
+                  ],
+                },
+              ],
+            },
             then: "Anonyme",
             else: "$user.displayName",
           },
@@ -322,8 +342,8 @@ exports.getFiltredReviews = async (req, res) => {
         },
         ratingPercentage: {
           $cond: {
-            if: { $gt: ["$count", 1] }, 
-            then: "$count", 
+            if: { $gt: ["$count", 1] },
+            then: "$count",
             else: "$$REMOVE",
           },
         },
@@ -351,7 +371,11 @@ exports.getFiltredReviews = async (req, res) => {
         name: "$originalName",
         stars: 1,
         ratingPercentage: {
-          $cond: { if: { $eq: ["$grouped", true] }, then: "$ratingPercentage", else: "$$REMOVE" }
+          $cond: {
+            if: { $eq: ["$grouped", true] },
+            then: "$ratingPercentage",
+            else: "$$REMOVE",
+          },
         },
         isNew: 1,
         grouped: 1,
@@ -609,8 +633,8 @@ exports.getProfilReviews = async (req, res) => {
 
       {
         $group: {
-          _id: "$_id", 
-          name: { $first: "$name" }, 
+          _id: "$_id",
+          name: { $first: "$name" },
           stars: { $avg: { $ifNull: ["$stars", 0] } },
           createdAt: { $min: "$createdAt" },
           user: { $first: "$user.displayName" },
@@ -623,9 +647,9 @@ exports.getProfilReviews = async (req, res) => {
         $addFields: {
           ratingPercentage: {
             $cond: {
-              if: { $gt: ["$count", 1] }, 
-              then: "$count", 
-              else: "$$REMOVE", 
+              if: { $gt: ["$count", 1] },
+              then: "$count",
+              else: "$$REMOVE",
             },
           },
           isNew: {
@@ -637,7 +661,7 @@ exports.getProfilReviews = async (req, res) => {
       {
         $project: {
           _id: "$_id",
-          name: 1, 
+          name: 1,
           stars: 1,
           ratingPercentage: 1,
           isNew: 1,
@@ -668,12 +692,13 @@ exports.getProfilReviews = async (req, res) => {
 exports.rateReview = async (req, res) => {
   try {
     const { reviewId } = req.params;
-    const { stars } = req.body; 
+    const { stars } = req.body;
     const userId = req.user.user._id;
 
-
     if (stars < 1 || stars > 5) {
-      return res.status(400).json({ message: "La note doit être comprise entre 1 et 5." });
+      return res
+        .status(400)
+        .json({ message: "La note doit être comprise entre 1 et 5." });
     }
 
     const review = await Review.findById(reviewId);
@@ -683,7 +708,9 @@ exports.rateReview = async (req, res) => {
     const isOwner = review.user.toString() === userId.toString();
 
     if (!isOwner) {
-      return res.status(403).json({ message: "Vous n'êtes pas autorisé à modifier cette évaluation." });
+      return res.status(403).json({
+        message: "Vous n'êtes pas autorisé à modifier cette évaluation.",
+      });
     }
 
     review.stars = stars;
@@ -698,7 +725,6 @@ exports.rateReview = async (req, res) => {
 
     const averageStars = totalRatings > 0 ? totalStars / totalRatings : 0;
 
-
     await review.save();
 
     const roundedAverageStars = parseFloat(averageStars.toFixed(3));
@@ -707,11 +733,13 @@ exports.rateReview = async (req, res) => {
     res.status(200).json({
       message: "Évaluation mise à jour avec succès",
       stars: roundedReviewStars,
-      ratingPercentage: groupReviews.length, 
+      ratingPercentage: groupReviews.length,
       groupedStars: roundedAverageStars,
     });
   } catch (error) {
-    res.status(400).json({ message: "Une erreur s'est produite", error: error.message });
+    res
+      .status(400)
+      .json({ message: "Une erreur s'est produite", error: error.message });
   }
 };
 exports.deleteReview = async (req, res) => {
@@ -732,7 +760,9 @@ exports.deleteReview = async (req, res) => {
     }
     if (userRole == "client") {
       if (review.user.toString() !== req.user.user._id) {
-        return res.status(401).json({ message: "tu n'es pas propriétaire du post" });
+        return res
+          .status(401)
+          .json({ message: "tu n'es pas propriétaire du post" });
       }
     }
     await Review.findByIdAndDelete(reviewId);
@@ -751,7 +781,7 @@ exports.editReview = async (req, res) => {
       return res.status(400).json({ message: err.message });
     }
     const { reviewId } = req.params;
-    let {  removeImages = "[]", ...updates} = req.body;
+    let { removeImages = "[]", ...updates } = req.body;
     if (typeof removeImages === "string") {
       try {
         removeImages = JSON.parse(removeImages);
@@ -764,15 +794,17 @@ exports.editReview = async (req, res) => {
     }
 
     try {
-      const review = await Review.findById(reviewId).populate('user');
+      const review = await Review.findById(reviewId).populate("user");
 
       if (!review) {
         return res.status(404).json({ message: "Aucun avis trouvé." });
       }
-      const isAdmin = req.user.user._role === 'admin'; 
+      const isAdmin = req.user.user._role === "admin";
       const isOwner = review.user._id.equals(req.user.user._id);
       if (!isAdmin && !isOwner) {
-        return res.status(403).json({ message: "Vous n'avez pas l'autorisation de modifier cet avis." });
+        return res.status(403).json({
+          message: "Vous n'avez pas l'autorisation de modifier cet avis.",
+        });
       }
       const imageDir = path.join(__dirname, "..", "uploads");
       if (Array.isArray(removeImages) && removeImages.length > 0) {
@@ -783,7 +815,10 @@ exports.editReview = async (req, res) => {
               try {
                 fs.unlinkSync(imagePath);
               } catch (unlinkError) {
-                console.error("Échec de la suppression du fichier image :", unlinkError);
+                console.error(
+                  "Échec de la suppression du fichier image :",
+                  unlinkError
+                );
               }
             } else {
               console.warn(`Fichier image non trouvé: ${imagePath}`);
