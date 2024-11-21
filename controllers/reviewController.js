@@ -313,21 +313,12 @@ exports.getFiltredReviews = async (req, res) => {
         userDisplayName: {
           $cond: {
             if: {
-              $or: [
+              $and: [
+                { $eq: ["$anonyme", true] },
                 {
-                  $and: [
-                    { $eq: ["$anonyme", true] },
-                    {
-                      $ne: [{ $toString: "$user._id" }, { $toString: userId }],
-                    },
-                  ],
+                  $ne: [{ $toString: "$user._id" }, { $toString: userId }],
                 },
-                {
-                  $and: [
-                    { $ne: [userRole, "admin"] },
-                    { $eq: ["$anonyme", true] },
-                  ],
-                },
+                { $ne: [userRole, "admin"] },
               ],
             },
             then: "Anonyme",

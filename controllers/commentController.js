@@ -16,7 +16,9 @@ exports.addComment = async (req, res) => {
       user: req.user.user._id,
       review: reviewId,
     });
-    const populatedComment = await Comment.findById(comment._id).populate('user');
+    const populatedComment = await Comment.findById(comment._id).populate(
+      "user"
+    );
     res.status(201).json(populatedComment);
   } catch (error) {
     res
@@ -37,34 +39,32 @@ exports.getComments = async (req, res) => {
       .skip((page - 1) * limit)
       .sort({ createdAt: -1 })
       .limit(parseInt(limit));
-      const processedComments = comments.map((comment) => {
-        let commentDisplayName = comment.user.displayName;
-        let commentImage = comment.user.image; 
-  
-  
-        if (review.anonyme) {
-          if (
-            (userId.toString() !== review.user._id.toString()) && 
-            (userRole !== "admin") && 
-            (review.user._id.toString() == comment.user._id.toString()) 
-          ) {
-            commentDisplayName = "Anonyme"; 
-            commentImage = "uploads\\anonyme.png"; 
-          }
-  
+    const processedComments = comments.map((comment) => {
+      let commentDisplayName = comment.user.displayName;
+      let commentImage = comment.user.image;
+
+      if (review.anonyme) {
+        if (
+          userId.toString() !== review.user._id.toString() &&
+          userRole !== "admin" &&
+          review.user._id.toString() == comment.user._id.toString()
+        ) {
+          commentDisplayName = "Anonyme";
+          commentImage = "uploads\\anonyme.png";
         }
-  
-        return {
-          ...comment.toObject(), 
-          user: {
-            ...comment.user.toObject(),
-            displayName: commentDisplayName, 
-            image: commentImage, 
-          },
-        };
-      });
-  
-      res.status(200).json(processedComments);
+      }
+
+      return {
+        ...comment.toObject(),
+        user: {
+          ...comment.user.toObject(),
+          displayName: commentDisplayName,
+          image: commentImage,
+        },
+      };
+    });
+
+    res.status(200).json(processedComments);
   } catch (error) {
     res
       .status(400)
