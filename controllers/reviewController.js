@@ -222,9 +222,10 @@ exports.approveReview = async (req, res) => {
 exports.getReviewById = async (req, res) => {
   const { reviewId } = req.params;
   const userId = req.user.user._id;
+  const userRole = req.user.user.role;
   try {
     const review = await Review.findById(reviewId)
-      .populate("user", "displayName image")
+      .populate("user", "displayName image anonyme")
       .lean();
     if (!review) {
       return res.status(404).json({ message: "Aucun Avis trouvée" });
@@ -233,16 +234,31 @@ exports.getReviewById = async (req, res) => {
     // const userHasRated = ratings.some(
     //   (rating) => rating.user.toString() === userId.toString()
     // );
-    const userStars = review.stars;
+    let displayName = review.user.displayName;
+    let image = review.user.image;
+
+    if (
+      (review.anonyme && userId.toString() !== review.user._id.toString()) ||
+      (userRole !== "admin" && review.anonyme)
+    ) {
+      displayName = "Anonyme";
+      image = "uploads\\anonyme.png";
+    }
+
+    const response = {
+      data: {
+        ...review,
+        user: {
+          displayName,
+          image: image,
+        },
+      },
+      userStars: review.stars,
+    };
     // const { ratings: _, ...reviewWithoutRatings } = review;
 
     // const ratePercentage = ratings.length || 0;
-    res.status(200).json({
-      data: review,
-      // ratePercentage,
-      // userHasRated,
-      userStars,
-    });
+    res.status(200).json(response);
   } catch (error) {
     res
       .status(400)
@@ -523,6 +539,8 @@ exports.getSuggestions = async (req, res) => {
       matchQuery = { approved: true, review: false };
     } else if (filter === "pending") {
       matchQuery = { approved: false };
+    } else if (filter === "all") {
+      matchQuery = { approved: true };
     }
     const searchRegex = new RegExp(search, "i");
     const aggregationPipeline = [];
