@@ -52,12 +52,6 @@ exports.getComments = async (req, res) => {
             commentImage = "uploads\\anonyme.png"; 
           }
   
-          // // For the owner of the review, anonymize the display name for clients and admins
-          // if (userId.toString() === review.user._id.toString()) {
-          //   commentDisplayName = "Anonyme"; // If the owner posted a comment
-          //   commentImage = "uploads\\anonyme.png"; 
-          // }
-          
         }
   
         return {

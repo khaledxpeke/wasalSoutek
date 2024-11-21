@@ -238,8 +238,9 @@ exports.getReviewById = async (req, res) => {
     let image = review.user.image;
 
     if (
-      (review.anonyme && userId.toString() !== review.user._id.toString()) ||
-      (userRole !== "admin" && review.anonyme)
+      review.anonyme &&
+      userId.toString() !== review.user._id.toString() &&
+      userRole !== "admin"
     ) {
       displayName = "Anonyme";
       image = "uploads\\anonyme.png";
@@ -449,7 +450,7 @@ exports.getGroupedReviews = async (req, res) => {
         _id: 1,
         name: 1,
         stars: 1,
-        message:1,
+        message: 1,
         ratingPercentage: { $size: { $ifNull: ["$ratings", []] } },
         user: "$user.displayName",
       },
