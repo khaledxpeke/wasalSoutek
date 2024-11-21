@@ -38,13 +38,30 @@ exports.getComments = async (req, res) => {
       .skip((page - 1) * limit)
       .sort({ createdAt: -1 })
       .limit(parseInt(limit));
-      if (
-        (review.anonyme && userId.toString() !== review.user._id.toString()) ||
-        (userRole !== "admin" && review.anonyme)
-      ) {
-        displayName = "Anonyme";
-      }
-    res.status(200).json(comments);
+      const processedComments = comments.map((comment) => {
+        let commentDisplayName = comment.user.displayName;
+        let commentImage = comment.user.image; 
+  
+  
+        if (
+          (comment.user.anonyme && userId.toString() !== comment.user._id.toString()) || 
+          (userRole !== "admin" && comment.user.anonyme)
+        ) {
+          commentDisplayName = "Anonyme"; 
+          commentImage = "uploads\\anonyme.png"; 
+        }
+  
+        return {
+          ...comment.toObject(), 
+          user: {
+            ...comment.user.toObject(),
+            displayName: commentDisplayName, 
+            image: commentImage, 
+          },
+        };
+      });
+  
+      res.status(200).json(processedComments);
   } catch (error) {
     res
       .status(400)
