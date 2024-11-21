@@ -347,6 +347,7 @@ exports.getFiltredReviews = async (req, res) => {
         originalName: { $first: "$name" },
         originalId: { $first: "$_id" },
         anonyme: { $first: "$anonyme" },
+        message: { $first: "$message" },
       },
     });
 
@@ -398,6 +399,7 @@ exports.getFiltredReviews = async (req, res) => {
         user: 1,
         userId: 1,
         anonyme: 1,
+        message: 1,
       },
     });
     const reviews = await Review.aggregate(aggregationPipeline);

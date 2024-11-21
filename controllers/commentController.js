@@ -1,5 +1,6 @@
 const Comment = require("../models/comment");
 const express = require("express");
+const Review = require("../models/review");
 const app = express();
 require("dotenv").config();
 app.use(express.json());
@@ -26,13 +27,23 @@ exports.addComment = async (req, res) => {
 
 exports.getComments = async (req, res) => {
   const { reviewId, page } = req.params;
+  const userId = req.user.user._id;
+  const userRole = req.user.user.role;
   const limit = 30;
   try {
+    const review = await Review.findById(reviewId).populate("user");
+    let displayName = review.user.displayName;
     const comments = await Comment.find({ review: reviewId })
       .populate("user", "displayName image")
       .skip((page - 1) * limit)
       .sort({ createdAt: -1 })
       .limit(parseInt(limit));
+      if (
+        (review.anonyme && userId.toString() !== review.user._id.toString()) ||
+        (userRole !== "admin" && review.anonyme)
+      ) {
+        displayName = "Anonyme";
+      }
     res.status(200).json(comments);
   } catch (error) {
     res
