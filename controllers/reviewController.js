@@ -252,6 +252,7 @@ exports.getFiltredReviews = async (req, res) => {
   try {
     const limit = 20;
     let matchQuery = {};
+    const userId = req.user.user._id;
 
     if (filter === "positive") {
       matchQuery = { approved: true, review: true };
@@ -276,7 +277,6 @@ exports.getFiltredReviews = async (req, res) => {
     });
 
     aggregationPipeline.push({ $unwind: "$user" });
-
     if (search && search.trim() !== "") {
       aggregationPipeline.push({
         $match: {
@@ -292,7 +292,7 @@ exports.getFiltredReviews = async (req, res) => {
         normalizedName: { $toLower: "$name" },
         userDisplayName: {
           $cond: {
-            if: "$anonyme",
+            if: { $and: [{ $eq: ["$anonyme", true] }, { $ne: [{ $toString: "$user._id" }, { $toString: userId }] }] },
             then: "Anonyme",
             else: "$user.displayName",
           },
