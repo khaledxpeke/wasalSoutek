@@ -522,6 +522,7 @@ exports.getFiltredPendingReviews = async (req, res) => {
         images: 1,
         review: 1,
         message: 1,
+        anonyme: 1,
         // rating: 1,
         stars: 1,
         createdAt: 1,
