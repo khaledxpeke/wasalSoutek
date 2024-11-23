@@ -6,25 +6,27 @@ const UserSchema = new Mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ["admin","client"],
+    enum: ["admin", "client"],
     required: true,
   },
   displayName: {
     type: String,
   },
   token: {
-    type: String, 
+    type: String,
   },
   password: {
     type: String,
   },
-  facebookId: { 
+  facebookId: {
     type: String,
   },
-  image:{
+  image: {
     type: String,
     default: "uploads\\user.png",
   },
+  resetCode: { type: String, default: null },
+  resetCodeExpires: { type: Date, default: null },
   createdAt: {
     type: Date,
     default: Date.now,

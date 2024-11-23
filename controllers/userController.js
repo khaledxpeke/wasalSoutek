@@ -9,8 +9,10 @@ app.use(express.json());
 const multer = require("multer");
 const multerStorage = require("../middleware/multerStorage");
 const fs = require("fs");
+const transporter = require("../middleware/email");
 const upload = multer({ storage: multerStorage });
 const defaultImage = "uploads\\user.png";
+const crypto = require("crypto");
 
 exports.register = async (req, res) => {
   upload.single("image")(req, res, async (err) => {
@@ -68,7 +70,7 @@ exports.register = async (req, res) => {
 };
 
 exports.login = async (req, res) => {
-  const { email, password,fcmToken } = req.body;
+  const { email, password, fcmToken } = req.body;
   try {
     const user = await User.findOne({ email });
     if (!user) {
@@ -183,7 +185,7 @@ exports.updateUser = async (req, res) => {
       }
 
       await user.save();
-      res.status(200).json({user:user});
+      res.status(200).json({ user: user });
     } catch (err) {
       console.log(err.message);
       res.status(500).send("Server Error");
@@ -210,4 +212,108 @@ exports.logout = async (req, res) => {
   user.fcmToken = "";
   await user.save();
   res.status(200).json({ message: "mise à jour du token réussie" });
+};
+
+exports.requestPasswordReset = async (req, res) => {
+  const { email } = req.body;
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: "Email non trouvée" });
+    }
+
+    const resetCode = crypto.randomInt(100000, 999999).toString();
+
+    const resetCodeExpires = new Date(Date.now() + 60 * 60 * 1000);
+
+    user.resetCode = resetCode;
+    user.resetCodeExpires = resetCodeExpires;
+    await user.save();
+
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: "Password Reset Code",
+      text: `Your password reset code is ${resetCode}. This code will expire in 1 hour.`,
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    res.status(200).json({ message: "Reset code sent to email" });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "An error occurred", error: error.message });
+  }
+};
+
+exports.verifyResetCode = async (req, res) => {
+  const { email, resetCode } = req.body;
+  try {
+    const user = await User.findOne({ email, resetCode });
+    if (!user || new Date(user.resetCodeExpires).getTime() < Date.now()) {
+      return res.status(400).json({ message: "Invalid or expired code" });
+    }
+
+    res
+      .status(200)
+      .json({ message: "Code verified, proceed to reset password" });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "An error occurred", error: error.message });
+  }
+};
+
+exports.resetPassword = async (req, res) => {
+  const { email, resetCode, newPassword } = req.body;
+  try {
+    const user = await User.findOne({ email, resetCode });
+    if (!user || new Date(user.resetCodeExpires).getTime() < Date.now()) {
+      return res.status(400).json({ message: "Invalid or expired code" });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    user.password = hashedPassword;
+    user.resetCode = null;
+    user.resetCodeExpires = null;
+    await user.save();
+
+    res.status(200).json({ message: "Password reset successful" });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "An error occurred", error: error.message });
+  }
+};
+
+exports.resendResetCode = async (req, res) => {
+  const { email } = req.body;
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: "Email not found" });
+    }
+
+    const resetCode = crypto.randomInt(100000, 999999).toString();
+    const resetCodeExpires = new Date(Date.now() + 60 * 60 * 1000);
+
+    user.resetCode = resetCode;
+    user.resetCodeExpires = resetCodeExpires;
+    await user.save();
+
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: "Password Reset Code (Resend)",
+      text: `Your new password reset code is ${resetCode}. This code will expire in 1 hour.`,
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    res.status(200).json({ message: "Reset code resent to email" });
+  } catch (error) {
+    res.status(500).json({ message: "An error occurred", error: error.message });
+  }
 };
