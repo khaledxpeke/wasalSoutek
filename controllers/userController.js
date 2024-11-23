@@ -254,7 +254,8 @@ exports.verifyResetCode = async (req, res) => {
     if (!user || new Date(user.resetCodeExpires).getTime() < Date.now()) {
       return res.status(400).json({ message: "Code invalide ou expiré" });
     }
-
+    user.resetCode = null;
+    user.resetCodeExpires = null;
     res
       .status(200)
       .json({ message: "Code vérifié, procéder à la réinitialisation du mot de passe" });
@@ -266,18 +267,16 @@ exports.verifyResetCode = async (req, res) => {
 };
 
 exports.resetPassword = async (req, res) => {
-  const { email, resetCode, newPassword } = req.body;
+  const { email,  newPassword } = req.body;
   try {
-    const user = await User.findOne({ email, resetCode });
-    if (!user || new Date(user.resetCodeExpires).getTime() < Date.now()) {
-      return res.status(400).json({ message: "Code invalide ou expiré" });
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ message: "email non trouvée" });
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
     user.password = hashedPassword;
-    user.resetCode = null;
-    user.resetCodeExpires = null;
     await user.save();
 
     res.status(200).json({ message: "Réinitialisation du mot de passe réussie" });
