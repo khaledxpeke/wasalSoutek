@@ -6,7 +6,6 @@ const {
   requestPasswordReset,
   verifyResetCode,
   resetPassword,
-  resendResetCode,
   getUsers,
   getUserById,
   updateUser,
@@ -21,7 +20,6 @@ router.post("/login", login);
 router.post("/code", requestPasswordReset);
 router.post("/verify", verifyResetCode);
 router.post("/reset", resetPassword);
-router.post("/resend", resendResetCode);
 router.get("/", roleAuth(["admin"]), getUsers);
 router.get("/client", roleAuth(["admin"]), getClients);
 router.get("/:userId", roleAuth(["admin","client"]), getUserById);

@@ -286,33 +286,3 @@ exports.resetPassword = async (req, res) => {
       .json({ message: "An error occurred", error: error.message });
   }
 };
-
-exports.resendResetCode = async (req, res) => {
-  const { email } = req.body;
-  try {
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(404).json({ message: "Email non trouvée" });
-    }
-
-    const resetCode = crypto.randomInt(100000, 999999).toString();
-    const resetCodeExpires = new Date(Date.now() + 60 * 60 * 1000);
-
-    user.resetCode = resetCode;
-    user.resetCodeExpires = resetCodeExpires;
-    await user.save();
-
-    const mailOptions = {
-      from: process.env.EMAIL_USER,
-      to: email,
-      subject: "Code de réinitialisation du mot de passe",
-      text: `Votre code de réinitialisation de mot de passe est ${resetCode}. Ce code expirera dans 1 heure.`,
-    };
-
-    await transporter.sendMail(mailOptions);
-
-    res.status(200).json({ message: "Code de réinitialisation envoyé par e-mail" });
-  } catch (error) {
-    res.status(500).json({ message: "An error occurred", error: error.message });
-  }
-};
