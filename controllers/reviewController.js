@@ -402,6 +402,7 @@ exports.getFiltredReviews = async (req, res) => {
         userId: 1,
         anonyme: 1,
         message: 1,
+        review: 1,
       },
     });
     const reviews = await Review.aggregate(aggregationPipeline);
