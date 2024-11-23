@@ -233,13 +233,13 @@ exports.requestPasswordReset = async (req, res) => {
     const mailOptions = {
       from: process.env.EMAIL_USER,
       to: email,
-      subject: "Password Reset Code",
-      text: `Your password reset code is ${resetCode}. This code will expire in 1 hour.`,
+      subject: "Code de réinitialisation du mot de passe",
+      text: `Votre code de réinitialisation de mot de passe est ${resetCode}. Ce code expirera dans 1 heure.`,
     };
 
     await transporter.sendMail(mailOptions);
 
-    res.status(200).json({ message: "Reset code sent to email" });
+    res.status(200).json({ message: "Code de réinitialisation envoyé par e-mail" });
   } catch (error) {
     res
       .status(500)
@@ -252,12 +252,12 @@ exports.verifyResetCode = async (req, res) => {
   try {
     const user = await User.findOne({ email, resetCode });
     if (!user || new Date(user.resetCodeExpires).getTime() < Date.now()) {
-      return res.status(400).json({ message: "Invalid or expired code" });
+      return res.status(400).json({ message: "Code invalide ou expiré" });
     }
 
     res
       .status(200)
-      .json({ message: "Code verified, proceed to reset password" });
+      .json({ message: "Code vérifié, procéder à la réinitialisation du mot de passe" });
   } catch (error) {
     res
       .status(500)
@@ -270,7 +270,7 @@ exports.resetPassword = async (req, res) => {
   try {
     const user = await User.findOne({ email, resetCode });
     if (!user || new Date(user.resetCodeExpires).getTime() < Date.now()) {
-      return res.status(400).json({ message: "Invalid or expired code" });
+      return res.status(400).json({ message: "Code invalide ou expiré" });
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
@@ -280,7 +280,7 @@ exports.resetPassword = async (req, res) => {
     user.resetCodeExpires = null;
     await user.save();
 
-    res.status(200).json({ message: "Password reset successful" });
+    res.status(200).json({ message: "Réinitialisation du mot de passe réussie" });
   } catch (error) {
     res
       .status(500)
@@ -293,7 +293,7 @@ exports.resendResetCode = async (req, res) => {
   try {
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(404).json({ message: "Email not found" });
+      return res.status(404).json({ message: "Email non trouvée" });
     }
 
     const resetCode = crypto.randomInt(100000, 999999).toString();
@@ -306,13 +306,13 @@ exports.resendResetCode = async (req, res) => {
     const mailOptions = {
       from: process.env.EMAIL_USER,
       to: email,
-      subject: "Password Reset Code (Resend)",
-      text: `Your new password reset code is ${resetCode}. This code will expire in 1 hour.`,
+      subject: "Code de réinitialisation du mot de passe",
+      text: `Votre code de réinitialisation de mot de passe est ${resetCode}. Ce code expirera dans 1 heure.`,
     };
 
     await transporter.sendMail(mailOptions);
 
-    res.status(200).json({ message: "Reset code resent to email" });
+    res.status(200).json({ message: "Code de réinitialisation envoyé par e-mail" });
   } catch (error) {
     res.status(500).json({ message: "An error occurred", error: error.message });
   }
