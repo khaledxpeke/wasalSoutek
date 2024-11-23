@@ -341,6 +341,7 @@ exports.getFiltredReviews = async (req, res) => {
         originalId: { $first: "$_id" },
         anonyme: { $first: "$anonyme" },
         message: { $first: "$message" },
+        review: { $first: "$review"},
       },
     });
 
