@@ -348,7 +348,17 @@ exports.getFiltredReviews = async (req, res) => {
     aggregationPipeline.push({
       $addFields: {
         stars: { $round: ["$stars", 3] },
-        starsPercentage: { $round: [{ $multiply: [{ $subtract: ["$stars", 1] }, 20] }, 2] },
+        starsPercentage: {
+          $round: [
+            {
+              $multiply: [
+                { $divide: ["$totalStars", { $multiply: [5, "$count"] }] },
+                100
+              ]
+            },
+            2
+          ]
+        },
         grouped: {
           $cond: { if: { $gt: ["$count", 1] }, then: true, else: false },
         },
