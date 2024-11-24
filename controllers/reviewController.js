@@ -863,7 +863,7 @@ exports.editReview = async (req, res) => {
       if (!review) {
         return res.status(404).json({ message: "Aucun avis trouvé." });
       }
-      const isAdmin = req.user.user._role === "admin";
+      const isAdmin = req.user.user.role === "admin";
       const isOwner = review.user._id.equals(req.user.user._id);
       if (!isAdmin && !isOwner) {
         return res.status(403).json({
