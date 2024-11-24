@@ -782,11 +782,13 @@ exports.rateReview = async (req, res) => {
 
     const totalStars = groupReviews.reduce((acc, rev) => acc + rev.stars, 0);
     const totalRatings = groupReviews.length;
+    console.log("totalRatings", totalRatings);
+    console.log("totalStars", totalStars);
 
     const averageStars = totalRatings > 0 ? totalStars / totalRatings : 0;
     const starsPercentage =
       totalRatings > 1
-        ? parseFloat(((totalStars / totalRatings*5) * 100).toFixed(2))
+        ? parseFloat(((totalStars / (totalRatings * 5)) * 100).toFixed(2))
         : null;
 
     await review.save();
