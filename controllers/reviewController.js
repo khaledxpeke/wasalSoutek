@@ -786,7 +786,7 @@ exports.rateReview = async (req, res) => {
     const averageStars = totalRatings > 0 ? totalStars / totalRatings : 0;
     const starsPercentage =
       totalRatings > 1
-        ? parseFloat(((totalStars / totalRatings) * 100).toFixed(2))
+        ? parseFloat(((totalStars / totalRatings*5) * 100).toFixed(2))
         : null;
 
     await review.save();
