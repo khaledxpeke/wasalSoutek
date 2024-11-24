@@ -620,7 +620,6 @@ exports.getSuggestions = async (req, res) => {
               },
             },
             { $sort: { _id: 1 } },
-            { $limit: limit },
           ],
           users: [
             {
@@ -640,7 +639,6 @@ exports.getSuggestions = async (req, res) => {
               },
             },
             { $sort: { _id: 1 } },
-            { $limit: limit },
           ],
         },
       });
@@ -650,7 +648,8 @@ exports.getSuggestions = async (req, res) => {
     const suggestions = [
       ...(results[0].reviews || []),
       ...(results[0].users || []),
-    ];
+    ] .sort((a, b) => a.name.localeCompare(b.name))
+    .slice(0, limit);
 
     res.status(200).json(suggestions.map((s) => s.name));
   } catch (error) {
