@@ -365,7 +365,7 @@ exports.getFiltredReviews = async (req, res) => {
                 2,
               ],
             },
-            else: 0, // Default to 0% if no reviews
+            else: 0, 
           },
         },
         grouped: {
@@ -782,8 +782,6 @@ exports.rateReview = async (req, res) => {
 
     const totalStars = groupReviews.reduce((acc, rev) => acc + rev.stars, 0);
     const totalRatings = groupReviews.length;
-    console.log("totalRatings", totalRatings);
-    console.log("totalStars", totalStars);
 
     const averageStars = totalRatings > 0 ? totalStars / totalRatings : 0;
     const starsPercentage =
