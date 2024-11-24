@@ -765,17 +765,18 @@ exports.rateReview = async (req, res) => {
     const totalRatings = groupReviews.length;
 
     const averageStars = totalRatings > 0 ? totalStars / totalRatings : 0;
-
-    const averagePercentage = (averageStars - 1) * 20;
+    const starsPercentage =
+    totalRatings > 1 ? parseFloat(((averageStars - 1) * 20).toFixed(3)) : null;
 
     await review.save();
 
-    const roundedAverageStars = parseFloat(averagePercentage.toFixed(3));
+    const roundedAverageStars = parseFloat(averageStars.toFixed(3));
     const roundedReviewStars = parseFloat(review.stars.toFixed(3));
 
     res.status(200).json({
       message: "Évaluation mise à jour avec succès",
       stars: roundedReviewStars,
+      starsPercentage,
       ratingPercentage: groupReviews.length,
       groupedStars: roundedAverageStars,
     });
