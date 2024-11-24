@@ -333,6 +333,7 @@ exports.getFiltredReviews = async (req, res) => {
         _id: "$normalizedName",
         stars: { $avg: { $ifNull: ["$stars", 0] } },
         // ratingPercentage: { $sum: { $size: { $ifNull: ["$ratings", []] } } },
+        totalStarsSum: { $sum: "$stars" },
         createdAt: { $min: "$createdAt" },
         user: { $first: "$user.displayName" },
         userId: { $first: "$user._id" },
@@ -341,7 +342,7 @@ exports.getFiltredReviews = async (req, res) => {
         originalId: { $first: "$_id" },
         anonyme: { $first: "$anonyme" },
         message: { $first: "$message" },
-        review: { $first: "$review"},
+        review: { $first: "$review" },
       },
     });
 
@@ -349,15 +350,23 @@ exports.getFiltredReviews = async (req, res) => {
       $addFields: {
         stars: { $round: ["$stars", 3] },
         starsPercentage: {
-          $round: [
-            {
-              $multiply: [
-                { $divide: ["$totalStars", { $multiply: [5, "$count"] }] },
-                100
-              ]
+          $cond: {
+            if: { $gt: ["$count", 0] }, // Ensure reviews exist
+            then: {
+              $round: [
+                {
+                  $multiply: [
+                    {
+                      $divide: ["$totalStarsSum", { $multiply: [5, "$count"] }],
+                    },
+                    100,
+                  ],
+                },
+                2,
+              ],
             },
-            2
-          ]
+            else: 0, // Default to 0% if no reviews
+          },
         },
         grouped: {
           $cond: { if: { $gt: ["$count", 1] }, then: true, else: false },
@@ -395,8 +404,8 @@ exports.getFiltredReviews = async (req, res) => {
         starsPercentage: {
           $cond: {
             if: { $eq: ["$grouped", true] },
-            then: "$starsPercentage", 
-            else: "$$REMOVE", 
+            then: "$starsPercentage",
+            else: "$$REMOVE",
           },
         },
         ratingPercentage: {
@@ -470,13 +479,13 @@ exports.getGroupedReviews = async (req, res) => {
           $cond: {
             if: {
               $and: [
-                { $eq: ["$anonyme", true] }, 
-                { $ne: [{ $toString: "$user._id" }, { $toString: userId }] }, 
-                { $ne: [userRole, "admin"] }, 
+                { $eq: ["$anonyme", true] },
+                { $ne: [{ $toString: "$user._id" }, { $toString: userId }] },
+                { $ne: [userRole, "admin"] },
               ],
             },
-            then: "Anonyme", 
-            else: "$user.displayName", 
+            then: "Anonyme",
+            else: "$user.displayName",
           },
         },
       },
@@ -776,12 +785,14 @@ exports.rateReview = async (req, res) => {
 
     const averageStars = totalRatings > 0 ? totalStars / totalRatings : 0;
     const starsPercentage =
-    totalRatings > 1 ? parseFloat(((averageStars - 1) * 20).toFixed(3)) : null;
+      totalRatings > 1
+        ? parseFloat(((totalStars / totalRatings) * 100).toFixed(2))
+        : null;
 
     await review.save();
 
-    const roundedAverageStars = parseFloat(averageStars.toFixed(3));
-    const roundedReviewStars = parseFloat(review.stars.toFixed(3));
+    const roundedAverageStars = parseFloat(averageStars.toFixed(2));
+    const roundedReviewStars = parseFloat(review.stars.toFixed(2));
 
     res.status(200).json({
       message: "Évaluation mise à jour avec succès",
