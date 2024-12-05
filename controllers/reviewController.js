@@ -669,6 +669,11 @@ exports.getNameSuggestions = async (req, res) => {
 
     const aggregationPipeline = [
       {
+        $addFields: {
+          name: { $trim: { input: "$name" } }, // Trim whitespace
+        },
+      },
+      {
         $match: {
           name: { $regex: searchRegex }, 
         },
