@@ -351,7 +351,7 @@ exports.getFiltredReviews = async (req, res) => {
         stars: { $round: ["$stars", 3] },
         starsPercentage: {
           $cond: {
-            if: { $gt: ["$count", 0] }, // Ensure reviews exist
+            if: { $gt: ["$count", 0] }, 
             then: {
               $round: [
                 {
@@ -656,6 +656,54 @@ exports.getSuggestions = async (req, res) => {
     res
       .status(400)
       .json({ message: "Une erreur s'est produite", error: error.message });
+  }
+};
+
+exports.getNameSuggestions = async (req, res) => {
+  const { search } = req.params;
+
+  try {
+
+    if (!search || search.trim() === "") {
+      return res.status(400).json({ message: "Search term is required" });
+    }
+
+    const searchRegex = new RegExp(search, "i");
+    const limit = 5;
+
+    const aggregationPipeline = [
+      {
+        $match: {
+          name: { $regex: searchRegex }, 
+        },
+      },
+      {
+        $project: {
+          name: 1, 
+          _id: 0,
+        },
+      },
+      {
+        $group: {
+          _id: { $toLower: "$name" }, 
+          name: { $first: "$name" }, 
+        },
+      },
+      {
+        $sort: { name: 1 }, 
+      },
+      {
+        $limit: limit, 
+      },
+    ];
+
+    const suggestions = await Review.aggregate(aggregationPipeline);
+
+    res.status(200).json(suggestions.map((s) => s.name));
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "An error occurred", error: error.message });
   }
 };
 

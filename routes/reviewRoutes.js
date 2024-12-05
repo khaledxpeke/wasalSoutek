@@ -9,6 +9,7 @@ deleteReview,
 approveReview,
 getFiltredReviews,
 getFiltredPendingReviews,
+getNameSuggestions,
 getSuggestions,
 getAllPendingReviews,
 rateReview,
@@ -26,6 +27,7 @@ router.put("/:reviewId", roleAuth(["admin","client"]),editReview );
 router.put("/update/:currentName", roleAuth(["admin"]),updateGroupedReviewName );
 router.put("/approve/:reviewId", roleAuth(["admin"]), approveReview);
 router.get("/grouped/:name", roleAuth(["admin", "client"]), getGroupedReviews);
+router.get("/suggestion/:search", roleAuth(["admin", "client"]), getNameSuggestions);
 router.get("/profil", roleAuth(["admin", "client"]), getProfilReviews);
 router.get("/pending/:page/:search?", roleAuth(["admin", "client"]), getFiltredPendingReviews);
 router.get("/suggest/:filter/:search?", roleAuth(["admin", "client"]), getSuggestions);
