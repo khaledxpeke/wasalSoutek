@@ -664,10 +664,6 @@ exports.getNameSuggestions = async (req, res) => {
 
   try {
 
-    if (!search || search.trim() === "") {
-      return res.status(400).json({ message: "Search term is required" });
-    }
-
     const searchRegex = new RegExp(search, "i");
     const limit = 5;
 
