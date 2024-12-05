@@ -589,7 +589,7 @@ exports.getSuggestions = async (req, res) => {
 
     aggregationPipeline.push({
       $addFields: {
-        normalizedName: { $toLower: "$name" },
+        normalizedName: { $toLower: { $trim: { input: "$name" } } },
       },
     });
 
