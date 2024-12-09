@@ -582,7 +582,8 @@ exports.getSuggestions = async (req, res) => {
     } else if (filter === "all") {
       matchQuery = { approved: true };
     }
-    const searchRegex = new RegExp(search, "i");
+    const escapedSearch = search.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
+    const searchRegex = new RegExp(escapedSearch, "i");
     const aggregationPipeline = [];
 
     aggregationPipeline.push({ $match: matchQuery });
