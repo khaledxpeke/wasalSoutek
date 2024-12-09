@@ -273,8 +273,8 @@ exports.getFiltredReviews = async (req, res) => {
   try {
     const limit = 20;
     let matchQuery = {};
-    const userId = req.user.user._id;
-    const userRole = req.user.user.role;
+    // const userId = req.user.user._id;
+    // const userRole = req.user.user.role;
 
     if (filter === "positive") {
       matchQuery = { approved: true, review: true };
@@ -299,11 +299,15 @@ exports.getFiltredReviews = async (req, res) => {
 
     aggregationPipeline.push({ $unwind: "$user" });
     if (search && search.trim() !== "") {
+      const normalizedSearch = search
+    .toLowerCase()
+    .replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
+      const searchRegex = new RegExp(normalizedSearch, "i");
       aggregationPipeline.push({
         $match: {
           $or: [
-            { "user.displayName": { $regex: new RegExp(search, "i") } },
-            { name: { $regex: new RegExp(search, "i") } },
+            { "user.displayName": { $regex: searchRegex } },
+            { name: { $regex: searchRegex } },
           ],
         },
       });
