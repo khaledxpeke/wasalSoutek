@@ -312,9 +312,6 @@ exports.getFiltredReviews = async (req, res) => {
         },
       });
     }
-    else {
-      console.log("Search is empty or undefined, skipping search filter.");
-    }
     if (filter !== "all") {
       aggregationPipeline.push({
         $addFields: {
