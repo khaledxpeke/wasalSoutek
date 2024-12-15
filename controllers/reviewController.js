@@ -438,6 +438,7 @@ exports.getFiltredReviews = async (req, res) => {
 
     res.status(200).json(reviews);
   } catch (error) {
+    console.error("Error Details:", error);
     res
       .status(400)
       .json({ message: "Une erreur s'est produite", error: error.message });
