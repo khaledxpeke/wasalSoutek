@@ -300,8 +300,8 @@ exports.getFiltredReviews = async (req, res) => {
     aggregationPipeline.push({ $unwind: "$user" });
     if (search && search.trim() !== "") {
       const normalizedSearch = search
-    .toLowerCase()
-    .replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
+        .toLowerCase()
+        .replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
       const searchRegex = new RegExp(normalizedSearch, "i");
       aggregationPipeline.push({
         $match: {
@@ -332,6 +332,7 @@ exports.getFiltredReviews = async (req, res) => {
         // },
       },
     });
+
     aggregationPipeline.push({
       $group: {
         _id: "$normalizedName",
@@ -355,7 +356,7 @@ exports.getFiltredReviews = async (req, res) => {
         stars: { $round: ["$stars", 3] },
         starsPercentage: {
           $cond: {
-            if: { $gt: ["$count", 0] }, 
+            if: { $gt: ["$count", 0] },
             then: {
               $round: [
                 {
@@ -369,28 +370,38 @@ exports.getFiltredReviews = async (req, res) => {
                 2,
               ],
             },
-            else: 0, 
+            else: 0,
           },
         },
         grouped: {
-          $cond: { if: { $gt: ["$count", 1] }, then: true, else: false },
+          $cond: {
+            if: { $eq: [filter, "all"] },
+            then: false,
+            else: {
+              $cond: {
+                if: { $gt: ["$count", 1] },
+                then: true, 
+                else: false,
+              },
+            },
+          },
         },
         ratingPercentage: {
           $cond: {
-            if: { $gt: ["$count", 1] },
+            if: { $and: [{ $gt: ["$count", 1] }, { $ne: [filter, "all"] }] },
             then: "$count",
             else: "$$REMOVE",
           },
         },
-        isNew: {
-          $gte: ["$createdAt", new Date(Date.now() - 24 * 60 * 60 * 1000)],
-        },
+        // isNew: {
+        //   $gte: ["$createdAt", new Date(Date.now() - 24 * 60 * 60 * 1000)],
+        // },
       },
     });
 
     aggregationPipeline.push({
       $sort: {
-        isNew: -1,
+        // isNew: -1,
         grouped: -1,
         ratingPercentage: -1,
         createdAt: -1,
@@ -419,7 +430,7 @@ exports.getFiltredReviews = async (req, res) => {
             else: "$$REMOVE",
           },
         },
-        isNew: 1,
+        // isNew: 1,
         grouped: 1,
         user: 1,
         userId: 1,
@@ -653,8 +664,9 @@ exports.getSuggestions = async (req, res) => {
     const suggestions = [
       ...(results[0].reviews || []),
       ...(results[0].users || []),
-    ] .sort((a, b) => a.name.localeCompare(b.name))
-    .slice(0, limit);
+    ]
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .slice(0, limit);
 
     res.status(200).json(suggestions.map((s) => s.name));
   } catch (error) {
@@ -668,7 +680,6 @@ exports.getNameSuggestions = async (req, res) => {
   const { search } = req.params;
 
   try {
-
     if (!search || search.trim() === "") {
       return res.status(200).json([]);
     }
@@ -684,26 +695,26 @@ exports.getNameSuggestions = async (req, res) => {
       },
       {
         $match: {
-          name: { $regex: searchRegex }, 
+          name: { $regex: searchRegex },
         },
       },
       {
         $project: {
-          name: 1, 
+          name: 1,
           _id: 0,
         },
       },
       {
         $group: {
-          _id: { $toLower: "$name" }, 
-          name: { $first: "$name" }, 
+          _id: { $toLower: "$name" },
+          name: { $first: "$name" },
         },
       },
       {
-        $sort: { name: 1 }, 
+        $sort: { name: 1 },
       },
       {
-        $limit: limit, 
+        $limit: limit,
       },
     ];
 
@@ -740,9 +751,9 @@ exports.getProfilReviews = async (req, res) => {
       {
         $addFields: {
           stars: { $round: ["$stars", 3] },
-          isNew: {
-            $gte: ["$createdAt", new Date(Date.now() - 24 * 60 * 60 * 1000)],
-          },
+          // isNew: {
+          //   $gte: ["$createdAt", new Date(Date.now() - 24 * 60 * 60 * 1000)],
+          // },
         },
       },
 
@@ -768,9 +779,9 @@ exports.getProfilReviews = async (req, res) => {
               else: "$$REMOVE",
             },
           },
-          isNew: {
-            $gte: ["$createdAt", new Date(Date.now() - 24 * 60 * 60 * 1000)],
-          },
+          // isNew: {
+          //   $gte: ["$createdAt", new Date(Date.now() - 24 * 60 * 60 * 1000)],
+          // },
         },
       },
 
@@ -780,7 +791,7 @@ exports.getProfilReviews = async (req, res) => {
           name: 1,
           stars: 1,
           ratingPercentage: 1,
-          isNew: 1,
+          // isNew: 1,
           user: 1,
           userId: 1,
           message: 1,
@@ -789,7 +800,7 @@ exports.getProfilReviews = async (req, res) => {
 
       {
         $sort: {
-          isNew: -1,
+          // isNew: -1,
           ratingPercentage: -1,
           stars: -1,
           createdAt: -1,
