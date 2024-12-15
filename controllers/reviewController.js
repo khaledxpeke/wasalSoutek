@@ -271,6 +271,9 @@ exports.getReviewById = async (req, res) => {
 exports.getFiltredReviews = async (req, res) => {
   const { page, filter, search } = req.params;
   try {
+    if (!search || search.trim() === "") {
+      return res.status(200).json([]);
+    }
     const limit = 20;
     let matchQuery = {};
     // const userId = req.user.user._id;
