@@ -312,80 +312,88 @@ exports.getFiltredReviews = async (req, res) => {
         },
       });
     }
+    else {
+      console.log("Search is empty or undefined, skipping search filter.");
+    }
     if (filter !== "all") {
       aggregationPipeline.push({
         $addFields: {
           normalizedName: { $toLower: { $trim: { input: "$name" } } },
         },
       });
-    aggregationPipeline.push({
-      $addFields: {
-        normalizedName: { $toLower: { $trim: { input: "$name" } } },
-      },
-    });
+      aggregationPipeline.push({
+        $addFields: {
+          normalizedName: { $toLower: { $trim: { input: "$name" } } },
+        },
+      });
 
-    aggregationPipeline.push({
-      $group: {
-        _id: "$normalizedName",
-        stars: { $avg: { $ifNull: ["$stars", 0] } },
-        // ratingPercentage: { $sum: { $size: { $ifNull: ["$ratings", []] } } },
-        totalStarsSum: { $sum: "$stars" },
-        createdAt: { $min: "$createdAt" },
-        user: { $first: "$user.displayName" },
-        userId: { $first: "$user._id" },
-        count: { $sum: 1 },
-        originalName: { $first: "$name" },
-        originalId: { $first: "$_id" },
-        anonyme: { $first: "$anonyme" },
-        message: { $first: "$message" },
-        review: { $first: "$review" },
-      },
-    });
+      aggregationPipeline.push({
+        $group: {
+          _id: "$normalizedName",
+          stars: { $avg: { $ifNull: ["$stars", 0] } },
+          // ratingPercentage: { $sum: { $size: { $ifNull: ["$ratings", []] } } },
+          totalStarsSum: { $sum: "$stars" },
+          createdAt: { $min: "$createdAt" },
+          user: { $first: "$user.displayName" },
+          userId: { $first: "$user._id" },
+          count: { $sum: 1 },
+          originalName: { $first: "$name" },
+          originalId: { $first: "$_id" },
+          anonyme: { $first: "$anonyme" },
+          message: { $first: "$message" },
+          review: { $first: "$review" },
+        },
+      });
 
-    aggregationPipeline.push({
-      $addFields: {
-        stars: { $round: ["$stars", 3] },
-        starsPercentage: {
-          $cond: {
-            if: { $gt: ["$count", 0] },
-            then: {
-              $round: [
-                {
-                  $multiply: [
-                    {
-                      $divide: ["$totalStarsSum", { $multiply: [5, "$count"] }],
-                    },
-                    100,
-                  ],
-                },
-                2,
-              ],
+      aggregationPipeline.push({
+        $addFields: {
+          stars: { $round: ["$stars", 3] },
+          starsPercentage: {
+            $cond: {
+              if: { $gt: ["$count", 0] },
+              then: {
+                $round: [
+                  {
+                    $multiply: [
+                      {
+                        $divide: [
+                          "$totalStarsSum",
+                          { $multiply: [5, "$count"] },
+                        ],
+                      },
+                      100,
+                    ],
+                  },
+                  2,
+                ],
+              },
+              else: 0,
             },
-            else: 0,
           },
-        },
-        grouped: { $cond: { if: { $gt: ["$count", 1] }, then: true, else: false } },
-        ratingPercentage: {
-          $cond: {
-            if: { $and: [{ $gt: ["$count", 1] }, { $ne: [filter, "all"] }] },
-            then: "$count",
-            else: "$$REMOVE",
+          grouped: {
+            $cond: { if: { $gt: ["$count", 1] }, then: true, else: false },
           },
+          ratingPercentage: {
+            $cond: {
+              if: { $and: [{ $gt: ["$count", 1] }, { $ne: [filter, "all"] }] },
+              then: "$count",
+              else: "$$REMOVE",
+            },
+          },
+          // isNew: {
+          //   $gte: ["$createdAt", new Date(Date.now() - 24 * 60 * 60 * 1000)],
+          // },
         },
-        // isNew: {
-        //   $gte: ["$createdAt", new Date(Date.now() - 24 * 60 * 60 * 1000)],
-        // },
-      },
-    });
-  } else {
-    aggregationPipeline.push({
-      $addFields: {
-        grouped: false,
-        user: "$user.displayName",
-        userId: "$user._id",
-      },
-    });
-  }
+      });
+    } else {
+      aggregationPipeline.push({
+        $addFields: {
+          grouped: false,
+          user: "$user.displayName",
+          userId: "$user._id",
+        },
+      });
+    }
     aggregationPipeline.push({
       $sort: {
         // isNew: -1,
