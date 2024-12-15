@@ -298,7 +298,7 @@ exports.getFiltredReviews = async (req, res) => {
     });
 
     aggregationPipeline.push({ $unwind: "$user" });
-    if (search && search.trim() !== "") {
+    if (search !== "" && search.trim() !== "") {
       const normalizedSearch = search
         .toLowerCase()
         .replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
