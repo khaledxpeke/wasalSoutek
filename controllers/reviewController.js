@@ -312,24 +312,15 @@ exports.getFiltredReviews = async (req, res) => {
         },
       });
     }
+    if (filter !== "all") {
+      aggregationPipeline.push({
+        $addFields: {
+          normalizedName: { $toLower: { $trim: { input: "$name" } } },
+        },
+      });
     aggregationPipeline.push({
       $addFields: {
         normalizedName: { $toLower: { $trim: { input: "$name" } } },
-        // userDisplayName: {
-        //   $cond: {
-        //     if: {
-        //       $and: [
-        //         { $eq: ["$anonyme", true] },
-        //         {
-        //           $ne: [{ $toString: "$user._id" }, { $toString: userId }],
-        //         },
-        //         { $ne: [userRole, "admin"] },
-        //       ],
-        //     },
-        //     then: "Anonyme",
-        //     else: "$user.displayName",
-        //   },
-        // },
       },
     });
 
@@ -373,19 +364,7 @@ exports.getFiltredReviews = async (req, res) => {
             else: 0,
           },
         },
-        grouped: {
-          $cond: {
-            if: { $eq: [filter, "all"] },
-            then: false,
-            else: {
-              $cond: {
-                if: { $gt: ["$count", 1] },
-                then: true, 
-                else: false,
-              },
-            },
-          },
-        },
+        grouped: { $cond: { if: { $gt: ["$count", 1] }, then: true, else: false } },
         ratingPercentage: {
           $cond: {
             if: { $and: [{ $gt: ["$count", 1] }, { $ne: [filter, "all"] }] },
@@ -398,7 +377,15 @@ exports.getFiltredReviews = async (req, res) => {
         // },
       },
     });
-
+  } else {
+    aggregationPipeline.push({
+      $addFields: {
+        grouped: false,
+        user: "$user.displayName",
+        userId: "$user._id",
+      },
+    });
+  }
     aggregationPipeline.push({
       $sort: {
         // isNew: -1,
@@ -413,8 +400,8 @@ exports.getFiltredReviews = async (req, res) => {
 
     aggregationPipeline.push({
       $project: {
-        _id: "$originalId",
-        name: "$originalName",
+        _id: filter !== "all" ? "$originalId" : "$_id",
+        name: filter !== "all" ? "$originalName" : "$name",
         stars: 1,
         starsPercentage: {
           $cond: {
