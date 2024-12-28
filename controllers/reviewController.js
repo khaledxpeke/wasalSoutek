@@ -816,12 +816,6 @@ exports.rateReview = async (req, res) => {
     const { stars } = req.body;
     const userId = req.user.user._id;
 
-    if (stars < 1 || stars > 5) {
-      return res
-        .status(400)
-        .json({ message: "La note doit être comprise entre 1 et 5." });
-    }
-
     const review = await Review.findById(reviewId);
     if (!review) {
       return res.status(404).json({ message: "Avis non trouvé" });
