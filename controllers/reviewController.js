@@ -482,6 +482,7 @@ exports.getGroupedReviews = async (req, res) => {
         name: 1,
         stars: 1,
         message: 1,
+        review:1,
         ratingPercentage: { $size: { $ifNull: ["$ratings", []] } },
         user: {
           $cond: {
