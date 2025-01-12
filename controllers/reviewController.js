@@ -88,7 +88,7 @@ const sendNotificationToAdmin = async (userId, tokens, review) => {
         const payload = {
           notification: {
             title: "Avis",
-            body: `Le Client ${client.displayName} a posté un avis ${review}`,
+            body: `${client.displayName} a posté un avis ${review}`,
           },
           token: token, // Ensure this is the correct token for the FCM message
         };
